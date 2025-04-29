@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}대시보드{% endblock %}
+
+{% block content %}
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+        }
+
+
+        .container {
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        .welcome {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 40px;
+        }
+
+        .cards {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+        }
+
+        .card {
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 3px 3px 10px rgba(0,0,0,0.1);
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+    </style>
+<body>
+
+<div class="container">
+    <div class="welcome">환영합니다!</div>
+    <div class="cards">
+        <div class="card" onclick="location.href='/create_post'">스터디 그룹 만들기</div>
+        <div class="card" onclick="location.href='/search_group'">스터디 그룹 검색</div>
+    </div>
+</div>
+
+</body>
+</html>
+{% endblock %}

@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}마이페이지{% endblock %}
+
+{% block content %}
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>홈</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background-color: #ebffe5;
+    }
+
+    .topbar {
+      background: #fff;
+      padding: 0 200px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      height: 60px;
+      border-bottom: 1px solid #ccc;
+    }
+    .topbar a{
+      font-size: 22px;
+      font-weight: bold;
+      color: #000;
+      text-decoration: none;
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .topbar-left h2 {
+      margin-right: 20px;
+    }
+
+    .topbar-left button {
+      padding: 20px 12px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      background: #fff;
+      color: rgb(0, 0, 0);
+    }
+    .topbar-left button:hover{
+        background-color: #ebffe5;
+    }
+
+    .top-buttons {
+      display: flex;
+      align-items: center;
+    }
+
+    .top-buttons .username {
+      margin: 0 10px;
+      font-weight: bold;
+    }
+
+    .top-buttons button {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-left: 5px;
+      background: #32c882;
+      color: rgb(255, 255, 255);
+    }
+
+    .container {
+      flex: 1;
+      padding: 20px 200px;
+      background: white;
+    }
+
+    .section {
+      display: none;
+    }
+
+    .section.active {
+      display: block;
+    }
+    .card-buttons {
+      display: flex;
+      margin-top: 50px;
+    }
+
+    .card-buttons button {
+      width: 200px;
+      height: 150px;
+      font-size: 20px;
+      border: none;
+      border-radius: 20px;
+      background-color: #32c882;
+      color: white;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+      transition: transform 0.2s, background-color 0.3s;
+    }
+
+    .card-buttons button:hover {
+      background-color: #28a971;
+      transform: scale(1.05);
+    }
+
+  </style>
+</head>
+<body>
+    <div class="container">
+        <h3>나의 스터디</h3>
+        {% for pu in joined_posts %}
+        <div class="card-buttons">
+            <button onclick="location.href='{{ url_for('group_page', post_id=pu.post.id) }}'">{{ pu.post.title }}</button>
+        </div>
+        {% endfor %}
+    </div>
+  <script>
+    function logout(){
+      location.href='login.html';
+    }
+  </script>
+</body>
+</html>
+{% endblock %}

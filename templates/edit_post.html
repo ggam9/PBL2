@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Post{% endblock %}
+
+{% block content %}
+<h1>Edit Post</h1>
+<form method="POST">
+    <input type="hidden" name="next" value="{{ request.args.get('next') }}">
+    <div class="form-group">
+        <label for="title">Title</label>
+        <input type="text" class="form-control" id="title" name="title" value="{{ post.title }}" required>
+    </div>
+    <div class="form-group">
+        <label for="topic">Topic</label>
+        <input type="text" class="form-control" id="topic" name="topic" value="{{ post.topic }}" required>
+    </div>
+    <div class="form-group">
+        <label for="content">Content</label>
+        <textarea class="form-control" id="content" name="content" rows="5" required>{{ post.content }}</textarea>
+    </div>
+    <div class="form-group">
+        <label for="max_participants">Max Participants</label><br>
+        <input type="number" id="max_participants" name="max_participants" value="{{ post.max_participants}}" "form-control" min="1" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Update Post</button>
+</form>
+{% endblock %}

@@ -1,0 +1,128 @@
+{% extends "group_page.html" %}
+
+{% block title %}공지{% endblock %}
+
+{% block group_content %}
+<style>
+    .group_content h2 {
+    margin-bottom: 20px;
+}
+
+.btn {
+    margin: 5px 0;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.btn-primary {
+    background-color: #32c882;
+    color: white;
+}
+
+.btn-success {
+    background-color: #28a745;
+    color: white;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    color: white;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+.form-popup {
+    background-color: white;
+    border: 1px solid #ccc;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+}
+
+.announcement-list {
+    list-style: none;
+    padding: 0;
+}
+
+.announcement-item {
+    border: 1px solid #ddd;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    background-color: #f8f9fa;
+}
+
+.announcement-header {
+    font-size: 1.1em;
+    margin-bottom: 5px;
+}
+
+.announcement-content {
+    margin-bottom: 10px;
+}
+
+</style>
+<h2>{{ post.title }}의 공지</h2>
+
+{% if current_role in ['leader', 'admin'] %}
+<button class="btn btn-primary" onclick="toggleForm()">새 공지 작성</button>
+<div id="announcementForm" class="form-popup" style="display:none;">
+    <h3>새 공지 작성</h3>
+    <form method="POST">
+        <input type="hidden" name="action" value="create">
+        <div class="form-group">
+            <label for="title">제목</label>
+            <input type="text" id="title" name="title" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="content">내용</label>
+            <textarea id="content" name="content" class="form-control" rows="3" required></textarea>
+        </div>
+        <button type="submit" class="btn btn-success">만들기</button>
+        <button type="button" class="btn btn-secondary" onclick="toggleForm()">취소</button>
+    </form>
+</div>
+{% endif %}
+
+<h3>공지사항</h3>
+<ul class="announcement-list">
+    {% for announcement in announcements %}
+    <li class="announcement-item">
+        <div class="announcement-header">
+            <strong>{{ announcement.title }}</strong> - {{ announcement.created_at.strftime('%Y-%m-%d %H:%M') }}
+        </div>
+        <div class="announcement-content">
+            {{ announcement.content }}
+        </div>
+        {% if current_role in ['leader', 'admin'] %}
+        <!--<form method="POST" style="display:inline;">
+            <input type="hidden" name="action" value="edit">
+            <input type="hidden" name="ann_id" value="{{ announcement.id }}">
+            <button type="submit" class="btn btn-secondary">Edit</button>
+        </form>-->
+        <form method="POST" style="display:inline;">
+            <input type="hidden" name="action" value="delete">
+            <input type="hidden" name="ann_id" value="{{ announcement.id }}">
+            <button type="submit" class="btn btn-danger">삭제</button>
+        </form>
+        {% endif %}
+    </li>
+    {% endfor %}
+</ul>
+
+<script>
+function toggleForm() {
+    var form = document.getElementById('announcementForm');
+    form.style.display = form.style.display === 'none' ? 'block' : 'none';
+}
+</script>
+{% endblock %}
