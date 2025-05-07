@@ -136,6 +136,22 @@ class Quiz(db.Model):
         return f"Quiz('{self.question}', '{self.difficulty}')"
 
 
+class PrivateMessage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    from_user_id= db.Column(db.String, db.ForeignKey('user.id'), nullable=False)
+    to_user = db.Column(db.String, nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+  # 관계 설정 (User 객체 참조)
+    from_user = db.relationship('User', backref='sent_messages', foreign_keys=[from_user_id])
+
+    def __repr__(self):
+        return f"PrivateMessage('{self.from_user}', '{self.to_user}', '{self.message}')"
+
+
+
+
+
 # 라우트 정의
 @app.route('/')
 def root():
@@ -148,9 +164,7 @@ def beginer():
         return redirect(url_for('login'))
     return render_template('beginer.html')
 
-@socketio.on('chat_message')
-def handle_chat_message(data):
-    emit('chat_message', data, broadcast=True)
+
 
 # 보호된 index2 페이지
 @app.route('/index2')
@@ -326,14 +340,96 @@ def group_announcement(post_id):
     announcements = Announcement.query.filter_by(post_id=post_id).order_by(Announcement.created_at.desc()).all()
     return render_template('group_announcement.html', post=post, announcements=announcements, current_role=current_role)
 
-@app.route('/group/<int:post_id>/chat', methods=['GET', 'POST'])
+@app.route('/group_chat/<int:post_id>') 
 def group_chat(post_id):
     if 'user_id' not in session:
         flash('Please log in to access this page.', 'warning')
         return redirect(url_for('login'))
     
-    post = db.session.get(Post, post_id)
-    return render_template('group_chat.html', post=post, logged_in=True)
+    post = Post.query.get_or_404(post_id) 
+    participants = [pu.user for pu in post.participants]
+       
+    return render_template('group_chat.html', post=post,participants=participants)
+
+@socketio.on('join_room')
+def handle_join_room(data):
+    room = data.get('room')
+    user_id = data.get('user_id') or session.get('user_id')  # 없을 경우 대비
+    join_room(room)
+    print(f"[join_room] user {user_id} joined room {room}")
+
+
+@socketio.on('group_message')
+def handle_group_message(data):
+    room = data.get('room')
+    msg = data.get('msg')
+    user_id = session.get('user_id')
+
+    user = User.query.get(user_id)
+    if not user:
+        print(f"[group_message] Invalid user ID: {user_id}")
+        return
+
+    print(f"[group_message] ({room}) {user.username}: {msg}")
+
+    emit('group_message', {
+        'username': user.username,
+        'msg': msg
+    }, room=room)
+
+
+@socketio.on("private_message")
+def handle_private_message(data):
+    from_username = data["from"]
+    to_username = data["to"]
+    message = data["message"]
+
+    # username → user object → id
+    from_user = User.query.filter_by(username=from_username).first()
+    to_user = User.query.filter_by(username=to_username).first()
+
+    if not from_user or not to_user:
+        return  # 사용자 없으면 무시하거나 예외 처리
+
+    # DB 저장
+    pm = PrivateMessage(from_user_id=from_user.id, to_user=to_username, message=message)
+    db.session.add(pm)
+    db.session.commit()
+
+    room = get_private_room(from_username, to_username)
+    join_room(room)
+    emit("private_message", {"from": from_username, "message": message}, room=room)
+
+
+@socketio.on("load_private_chat")
+def handle_load_private_chat(data):
+    from_username = data["from"]
+    to_username = data["to"]
+
+    from_user = User.query.filter_by(username=from_username).first()
+    to_user = User.query.filter_by(username=to_username).first()
+
+    if not from_user or not to_user:
+        return
+
+    # 메시지 로드 (username 기준)
+    messages = PrivateMessage.query.filter(
+        ((PrivateMessage.from_user_id == from_user.id) & (PrivateMessage.to_user == to_username)) |
+        ((PrivateMessage.from_user_id == to_user.id) & (PrivateMessage.to_user == from_username))
+    ).order_by(PrivateMessage.timestamp.asc()).all()
+
+    formatted = [{"from": User.query.get(m.from_user_id).username, "message": m.message} for m in messages]
+
+    room = get_private_room(from_username, to_username)
+    join_room(room)
+    emit("load_private_chat", {"messages": formatted})
+
+
+def get_private_room(user1, user2):
+    return "_".join(sorted([user1, user2]))
+
+
+
 
 @app.route('/group/<int:post_id>/share', methods=['GET', 'POST'])
 def group_share(post_id):
@@ -696,7 +792,7 @@ def handle_disconnect(sid=None):
 if __name__ == '__main__':   
     with app.app_context():
         db.create_all()  # 데이터베이스와 테이블을 초기화합니다.
-    app.run(debug=True)
+    
     socketio.run(app, debug=True)
    
 
