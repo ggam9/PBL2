@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block title %}대시보드{% endblock %}
+
+{% block content %}
+<div style="display: flex; height: 100vh;">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+        body {
+            height: 100vh;
+            background-color: #ebffe5;
+        }
+        a:link {
+            text-decoration: none;
+        }
+        .sidebar {
+            width: 250px;
+            background: #ebffe5;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        }
+        .sidebar h2 {
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+        .sidebar button {
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 5px;
+            background: #00ff5e;
+            color: #000;
+        }
+        .sidebar button:hover {
+            background-color: #00be00;
+        }
+        .sidebar ul {
+            list-style: none;
+        }
+        .sidebar ul li {
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 5px;
+        }
+        .sidebar ul li:hover {
+            background: #c9f9b0;
+        }
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .topbar {
+            background: #ebffe5;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .search-box input {
+            padding: 8px;
+            width: 400px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f0ffeb;
+        }
+        .buttons button {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 5px;
+            background: #00ff5e;
+            color: #000;
+        }
+        .buttons button:hover {
+            background: #00be00;
+        }
+        .content {
+            flex: 1;
+            padding: 20px;
+        }
+        @media (width >= 500px) {
+            .buttons {
+                width: 300px;
+            }
+        }
+    </style>
+    <div class="sidebar">
+        <h2>메뉴</h2>
+        <ul>
+            <li onclick="showContent('todo')">✅ 해야 할 일</li>
+            <li onclick="showContent('notice')">📢 공지</li>
+            <li onclick="showContent('chat')">💬 채팅</li>
+            <li onclick="showContent('share')">📁 자료 공유</li>
+            <li onclick="showContent('quiz')">📖 문제풀이</li>
+            <li onclick="showContent('calendar')">📆 일정</li>
+            <button onclick="location.href='/'">🖥️ 스터디 시작</button>
+        </ul>
+    </div>
+
+    <div class="main" style="flex: 1; display: flex; flex-direction: column;">
+        <div id="content" class="content" style="flex: 1; padding: 20px;">
+            <h1>대시보드</h1>
+            <p>여기에 컨텐츠가 들어갑니다.</p>
+        </div>
+    </div>
+</div>
+<!-- Socket.IO를 통한 실시간 업데이트 -->
+<script src="https://cdn.socket.io/4.3.2/socket.io.min.js"></script>
+<script>
+    let currentUsername = "{{ session['username'] }}"; // 실제 로그인된 사용자 이름으로 대체 가능
+    const socket = io();
+function showContent(type) {
+    const content = document.getElementById('content');
+    
+
+    if (type === 'quiz') {
+        content.innerHTML = `
+            <h2>📖 문제풀이</h2>
+            <form onsubmit="handleSubmit(event)">
+                <label>날짜: <input type="text" id="quiz-date" required></label><br><br>
+                <label>문제 설명:<br>
+                    <textarea id="quiz-desc" rows="4" cols="40" required></textarea>
+                </label><br><br>
+                <label>정답: <input type="text" id="quiz-answer" required></label><br><br>
+                <label>점수: <input type="number" id="quiz-score" required></label><br><br>
+                <button type="submit">추가하기</button>
+            </form>
+            <hr>
+            <div id="score-info">
+                <p>맞춘 문제 수: <span id="solved-count">0</span></p>
+                <p>총 점수: <span id="total-score">0</span></p>
+            </div>
+            <hr>
+            <div id="quiz-list">불러오는 중...</div>
+        `;
+        fetchQuizzes();
+        updateScore(currentUsername);
+    } else if (type === 'chat') {
+            content.innerHTML = `
+                <h2>💬 실시간 채팅</h2>
+                <div id="chat-box" style="border:1px solid #ccc; height:300px; overflow-y:scroll; padding:10px; background:#fff; margin-bottom:10px;"></div>
+                <form id="chat-form" onsubmit="sendMessage(event)">
+                    <input type="text" id="chat-input" placeholder="메시지 입력..." style="width:80%; padding:8px;" required>
+                    <button type="submit" style="padding:8px 12px;">전송</button>
+                </form>
+            `;
+        } else {
+            content.innerHTML = `<h2>${type} 페이지</h2><p>콘텐츠를 여기에 추가할 수 있습니다.</p>`;
+        }
+}
+
+async function handleSubmit(event) {
+    event.preventDefault();
+    const date = document.getElementById('quiz-date').value;
+    const desc = document.getElementById('quiz-desc').value;
+    const answer = document.getElementById('quiz-answer').value;
+    const score = parseInt(document.getElementById('quiz-score').value);
+
+    await fetch('/add_quiz', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            date,
+            desc,
+            answer,
+            score,
+            username: currentUsername  // ✅ 사용자 이름 전달
+        })
+    });
+
+    fetchQuizzes();
+}
+
+ // 🟢 실시간 채팅 관련 함수
+ function sendMessage(event) {
+        event.preventDefault();
+        const input = document.getElementById('chat-input');
+        const message = input.value.trim();
+        if (message !== "") {
+            socket.emit('chat_message', { username: currentUsername, message });
+            input.value = "";
+        }
+    }
+
+    socket.on('chat_message', (data) => {
+        const chatBox = document.getElementById('chat-box');
+        if (chatBox) {
+            const msgDiv = document.createElement('div');
+            msgDiv.innerHTML = `<strong>${data.username}</strong>: ${data.message}`;
+            chatBox.appendChild(msgDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+    });
+    
+
+</script>
+
+
+</body>
+</html>
+{% endblock %}
