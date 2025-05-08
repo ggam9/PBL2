@@ -1,0 +1,162 @@
+{% extends "group_page.html" %}
+
+{% block title %}채팅{% endblock %}
+
+{% block group_content %}
+<style>
+    
+    #participant-list h4 {
+     margin-top: 0;
+     margin-bottom: 10px;
+     }
+    
+
+    #participant-list, #private-chat-panel, #groupChatBox {
+        background-color: #e8f5e9; /* 요소 배경 연녹색 */
+        border-radius: 8px;
+        border: 1px solid #c8e6c9;
+    }
+
+    #participant-list {
+        margin-right: 10px;
+    }
+
+    #participant-list ul {
+        list-style: none;
+        padding-left: 0;
+    }
+
+    #participant-list li {
+        padding: 8px 10px;
+      margin-bottom: 8px;
+      border-radius: 6px;
+      background-color: #ffffff;
+      border: 1px solid #d0f0d0;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); 
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    #participant-list li:hover {
+     background-color: #e0f7e9;
+     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); 
+     transform: translateY(-2px); 
+    }
+
+    input {
+        padding: 8px;
+        border: 1px solid #aed581;
+        border-radius: 6px;
+        margin-right: 5px;
+        width: 65%;
+    }
+
+    button {
+        padding: 8px 7px;
+        background-color: #66bb6a;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+    button:hover {
+        background-color: #558b2f;
+    }
+
+    #privateChatBox {
+        background-color: #ffffff;
+    }
+
+    
+
+</style>
+
+<h2>💬 채팅방</h2>
+
+<!-- Socket.IO 및 JS 연결 -->
+<script src="https://cdn.socket.io/4.3.2/socket.io.min.js"></script>
+<script>
+    const postId = {{ post.id }};
+    const currentUsername = "{{ session['username'] }}";
+</script>
+<script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+
+<div id="chat-container">
+
+    <!-- 🔹 상단: 참여자 목록 + 1:1 채팅 -->
+    <div style="display: flex; height: 300px; margin-bottom: 20px;">
+        
+        <!-- 참여자 목록 -->
+ <div id="participant-list" style="width: 30%; border: 1px solid #ccc; overflow-y: auto; padding: 10px;">
+    <h4>참여자</h4>
+    <ul id="userList">
+        {% for user in participants %}
+            {% if user.username != session['username'] %}
+                <li onclick="openPrivateChat('{{ user.username }}')" style="cursor: pointer;">
+                    {{ user.username }}
+                </li>
+            {% endif %}
+        {% endfor %}
+    </ul>
+ </div>
+
+ <!-- 1:1 채팅창 (처음엔 숨김) -->
+ <div id="private-chat-panel" style="width: 70%; padding-left: 10px; display: none;">
+    <div style="display: flex; justify-content: space-between;">
+        <h4 id="private-chat-title">1:1 채팅</h4>
+        <button onclick="closePrivateChat()">❌</button>
+    </div>
+    <div id="privateChatBox"
+        style="height: 200px; overflow-y: scroll; border: 1px solid #aaa; padding: 10px; margin-bottom: 10px;">
+    </div>
+    <div>
+        <input id="privateMsg" placeholder="메시지를 입력하세요" style="width: 70%;">
+        <button onclick="sendPrivateMessage()">보내기</button>
+    </div>
+  </div>
+ </div>
+
+    <!-- 🔹 하단: 그룹 채팅 -->
+    <div>
+        <h3>그룹 채팅방</h3>
+        <div id="groupChatBox" 
+             style="height: 250px; overflow-y: scroll; border: 2px solid #a5d6a7; padding: 10px; margin-bottom: 10px; background-color: #ffffff;">
+        </div>
+        <div>
+            <input id="groupMsg" placeholder="메시지를 입력하세요" style="width: 70%;">
+            <button onclick="sendGroupMessage()">보내기</button>
+        </div>
+    </div>
+</div>
+    
+
+<script>
+    
+    
+    async function handleSubmit(event) {
+        event.preventDefault();
+        const date = document.getElementById('quiz-date').value;
+        const desc = document.getElementById('quiz-desc').value;
+        const answer = document.getElementById('quiz-answer').value;
+        const score = parseInt(document.getElementById('quiz-score').value);
+
+        await fetch('/add_quiz', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                date,
+                desc,
+                answer,
+                score,
+                username: currentUsername  // ✅ 사용자 이름 전달
+            })
+        });
+
+    fetchQuizzes();
+    }
+
+</script>
+
+{% endblock %}
