@@ -3,135 +3,216 @@
 {% block title %}마이페이지{% endblock %}
 
 {% block content %}
-
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>홈</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: Arial, sans-serif;
-    }
-
+<style>
     body {
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      background-color: #ebffe5;
-    }
-
-    .topbar {
-      background: #fff;
-      padding: 0 200px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-      height: 60px;
-      border-bottom: 1px solid #ccc;
-    }
-    .topbar a{
-      font-size: 22px;
-      font-weight: bold;
-      color: #000;
-      text-decoration: none;
-    }
-
-    .topbar-left {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-    }
-
-    .topbar-left h2 {
-      margin-right: 20px;
-    }
-
-    .topbar-left button {
-      padding: 20px 12px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      background: #fff;
-      color: rgb(0, 0, 0);
-    }
-    .topbar-left button:hover{
-        background-color: #ebffe5;
-    }
-
-    .top-buttons {
-      display: flex;
-      align-items: center;
-    }
-
-    .top-buttons .username {
-      margin: 0 10px;
-      font-weight: bold;
-    }
-
-    .top-buttons button {
-      padding: 8px 12px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      margin-left: 5px;
-      background: #32c882;
-      color: rgb(255, 255, 255);
+        font-family: Arial, sans-serif;
+        margin: 0;
+        background-color: #fff;
     }
 
     .container {
-      flex: 1;
-      padding: 20px 200px;
-      background: white;
+        max-width: 1000px;
+        margin: 40px auto;
+        padding: 0 20px;
+        display: flex;
+        gap: 20px;
     }
 
-    .section {
-      display: none;
+    .left-panel {
+        flex: 2;
+    }
+    .separator {
+        width: 1px;
+        background-color: #ccc;
+        margin: 0 10px;
+    }
+    .right-panel {
+        flex: 1;
+        background-color: white;
+        border-radius: 20px;
+        box-shadow: 3px 3px 12px rgba(0, 0, 0, 0.08);
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
     }
 
-    .section.active {
-      display: block;
-    }
-    .card-buttons {
-      display: flex;
-      margin-top: 50px;
+    .panel-header {
+        text-align: center;
+        margin-bottom: 20px;
     }
 
-    .card-buttons button {
-      width: 200px;
-      height: 150px;
-      font-size: 20px;
-      border: none;
-      border-radius: 20px;
-      background-color: #32c882;
-      color: white;
-      cursor: pointer;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-      transition: transform 0.2s, background-color 0.3s;
+    .panel-header h3 {
+        font-size: 24px;
+        font-weight: bold;
+        color: #333;
     }
 
-    .card-buttons button:hover {
-      background-color: #28a971;
-      transform: scale(1.05);
+    .card-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
     }
 
-  </style>
-</head>
-<body>
-  <p>총 공부 시간: {{ formatted_study_time }}</p>
-    <div class="container">
-        <h3>나의 스터디</h3>
+    .card-box {
+        background-color: white;
+        border-radius: 20px;
+        box-shadow: 3px 3px 12px rgba(0, 0, 0, 0.08);
+        transition: transform 0.2s, box-shadow 0.2s;
+        cursor: pointer;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .card-box:hover {
+        transform: translateY(-5px);
+        box-shadow: 5px 5px 18px rgba(0, 0, 0, 0.12);
+    }
+
+    .card-content {
+        padding: 20px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .card-title {
+        font-size: 20px;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 10px;
+    }
+
+    .card-desc {
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 8px;
+    }
+
+    .card-btn {
+        align-self: flex-start;
+        padding: 10px 20px;
+        background-color: #32c882;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: bold;
+        text-decoration: none;
+        transition: background-color 0.2s;
+    }
+
+    .card-btn:hover {
+        background-color: #206f4a;
+    }
+
+    .stats {
+        flex: 1;
+    }
+
+    .stats h4 {
+        font-size: 18px;
+        margin-bottom: 10px;
+        color: #333;
+    }
+
+    .stats p {
+        font-size: 14px;
+        margin-bottom: 16px;
+        color: #666;
+    }
+
+    .set-btn {
+        padding: 12px;
+        background-color: #32c882;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: bold;
+        text-align: center;
+        text-decoration: none;
+        transition: background-color 0.2s;
+    }
+
+    .set-btn:hover {
+        background-color: #206f4a;
+    }
+    .study-info {
+        flex: 2;
+        min-width: 200px;
+    }
+    .progress-title {
+        font-size: 14px;
+        font-weight: bold;
+        margin-bottom: 4px;
+        color: #333;
+    }
+
+    .progress-bar {
+        width: 100%;
+        background-color: #e0e0e0;
+        border-radius: 10px;
+        overflow: hidden;
+        margin-bottom: 16px;
+        height: 14px;
+    }
+
+    .progress-fill {
+        height: 100%;
+        text-align: right;
+        padding-right: 8px;
+        line-height: 14px;
+        font-size: 11px;
+        font-weight: bold;
+        color: white;
+    }
+
+    .bar-total { background-color: #4f46e5; }
+    .bar-today { background-color: #32c882; }
+    .bar-goal { background-color: #f59e0b; }
+</style>
+
+<div class="container">
+    <div class="left-panel">
+        <div class="panel-header">
+            <h3>나의 스터디</h3>
+        </div>
+        <div class="card-grid">
+            {% for pu in joined_posts %}
+            <div class="card-box" onclick="location.href='{{ url_for('group_page', post_id=pu.post.id) }}'">
+                <div class="card-content">
+                    <div>
+                        <div class="card-title">{{ pu.post.title }}</div>
+                        <div class="card-desc">인원 수: {{ pu.post.member_count }}명</div>
+                        <div class="card-desc">주제: {{ pu.post.subject }}</div>
+                    </div>
+                    <a href="{{ url_for('group_page', post_id=pu.post.id) }}" class="card-btn">바로 가기</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
     </div>
-  <script>
-    function logout(){
-      location.href='login.html';
-    }
-  </script>
-</body>
-</html>
+    <div class="separator"></div>
+    <div class="right-panel">
+        <div class="panel-header">
+            <h3>공부 시간</h3>
+        </div>
+        <div class="study-info">
+            <div class="progress-title">총 공부 시간 (200시간)</div>
+            <div class="progress-bar">
+                <div class="progress-fill bar-total" style="width: 60%;">60%</div>
+            </div>
+
+            <div class="progress-title">오늘 공부 시간 (3시간)</div>
+            <div class="progress-bar">
+                <div class="progress-fill bar-today" style="width: 60%;">60%</div>
+            </div>
+
+            <div class="progress-title">목표 공부 시간 (이번 주: 10시간 / 20시간)</div>
+                <div class="progress-bar">
+            <div class="progress-fill bar-goal" style="width: 50%;">50%</div>
+          </div>
+    </div>
+</div>
 {% endblock %}
