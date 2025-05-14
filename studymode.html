@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>공부 모드</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 30px 20px 100px;
+      position: relative;
+      transition: background-color 0.5s ease, color 0.5s ease;
+    }
+    body.dark-mode {
+      background-color: #363636;
+      color: #000;
+      transition: background-color 0.5s ease, color 0.5s ease;
+    }
+    body.dark-mode .user-box{
+        background: #5b605a;
+    }
+
+    body.dark-mode button {
+      background-color: #32c882;
+      color: #fff;
+      border: 1px solid #555;
+    }
+
+    h2 {
+      margin-bottom: 40px;
+    }
+
+    .study-list {
+      width: 100%;
+      max-width: 600px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .user-box {
+      background: #ebffe5;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .user-box span {
+      font-weight: bold;
+      font-size: 16px;
+    }
+
+    .bottom-buttons {
+      position: fixed;
+      bottom: 30px;
+      display: flex;
+      gap: 20px;
+    }
+
+    .bottom-buttons button {
+      padding: 12px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      background-color: #32c882;
+      color: white;
+    }
+
+    .bottom-buttons button:hover {
+      background-color: #28b176;
+    }
+  </style>
+</head>
+<body>
+  <h2>📚 공부 모드</h2>
+
+  <div class="study-list" id="study-list">
+    <!-- 사용자 목록이 여기 추가됩니다. -->
+  </div>
+
+  <div class="bottom-buttons">
+    <button onclick="endStudy()">공부 종료</button>
+    <button onclick="goToVideoChat()">화상 스터디</button>
+    <button onclick="darkMode()">다크 모드</button>
+  </div>
+
+  <script src="https://cdn.socket.io/4.3.2/socket.io.min.js"></script>
+  <script>
+      const socket = io();
+      const username = "{{ username }}";
+      const postId = "{{ post_id }}";
+      let userStartTimes = {};
+  
+      // 페이지 로드 시 서버에 join 이벤트 전송
+      window.onload = function() {
+          socket.emit('join-time', { username: username, postId: postId });
+      };
+      function goToVideoChat() {   //화상채팅들어갈때 정보넘김
+        const username = encodeURIComponent("{{ username }}");
+        const postId = "{{ post_id }}";   
+       location.href = `/group/${postId}/videochat?username=${username}`;
+      }
+      // 사용자 목록 및 시작 시간 업데이트
+      socket.on('user_list', function(users) {
+        const studyList = document.getElementById('study-list');
+        studyList.innerHTML = '';
+        for (const user in users) {
+          userStartTimes[user] = new Date(users[user]);  // 서버에서 받은 시작 시간을 사용
+          const userBox = document.createElement('div');
+          userBox.className = 'user-box';
+          userBox.innerHTML = `<span>${user}</span><span id="time-${user}">00:00:00</span>`;
+          studyList.appendChild(userBox);
+        }
+      });
+  
+      // 타이머 포맷팅 함수
+      function getFormattedTime(startTime) {
+        const now = new Date();
+        const diff = new Date(now - startTime);
+        return `${String(diff.getUTCHours()).padStart(2, '0')}:${String(diff.getUTCMinutes()).padStart(2, '0')}:${String(diff.getUTCSeconds()).padStart(2, '0')}`;
+      }
+  
+      // 타이머 갱신
+      setInterval(() => {
+        for (const user in userStartTimes) {
+          const timeElement = document.getElementById(`time-${user}`);
+          if (timeElement) {
+            timeElement.textContent = getFormattedTime(userStartTimes[user]);
+          }
+        }
+      }, 1000);
+  
+      // 다크 모드 토글
+      function darkMode() {
+        document.body.classList.toggle('dark-mode');
+      }
+
+      // 공부 종료 버튼 클릭 시
+      function endStudy() {
+        // leave 이벤트 전송
+        socket.emit('leave-time', { username: username, postId: postId });
+        // 페이지 이동
+        location.href = '/';
+      }
+  
+      // 창이 닫히거나 페이지를 벗어날 때 leave 이벤트 전송
+      window.onbeforeunload = function() {
+          socket.emit('leave-time', { username: username, postId: postId });
+      };
+  </script>
+</body>
+</html>
