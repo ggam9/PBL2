@@ -638,12 +638,15 @@ def studymode(post_id):
         return redirect(url_for('login'))
     return render_template('studymode.html', username=session['username'], post_id=post_id)
 
-@app.route('/videochat')
-def videochat():
+@app.route('/group/<int:post_id>/videochat')
+def videochat(post_id):
     if 'user_id' not in session:
         flash('Please log in to view your my_page', 'warning')
         return redirect(url_for('login'))
-    return render_template('videochat.html')
+    username = request.args.get('username') or session.get('username') or 'Guest'
+    return render_template('videochat.html',post_id=post_id,username=username)
+    
+
 
 socketio.on('connect')
 def handle_connect():
@@ -722,6 +725,7 @@ def my_page():
 
     return render_template('my_page.html', joined_posts=joined_posts, formatted_study_time=formatted_study_time)
 #화상회의-----------------------------------------------------------------------------------------------------
+
 app.config['SECRET_KEY'] = 'secret!'
 
 ROOM = 'mesh_room'
@@ -788,6 +792,26 @@ def handle_disconnect(sid=None):
     # 모두에게 알림
     emit('user-disconnected', {'user_id': user_id, 'sid': sid}, room=ROOM)
     print('Client disconnected', sid)
+#-----------화상비디오 채팅-----------
+@socketio.on('chat_message')
+def handle_chat_message(data):
+    room = data.get('room')
+    msg = data.get('msg')
+    #user_id = data.get('user_id') or session.get('user_id')
+    username = data.get('username') or 'Unknown'
+  
+    #user = User.query.get(user_id) if user_id else None
+    #username = user.username if user else f"Guest-{user_id[:5]}"
+
+    print(f"[chat_message] ({room}) {username}: {msg}")
+
+    emit('chat_message', {
+        'username': username,
+        'msg': msg
+    }, room=room)
+
+
+
 # 애플리케이션 실행
 if __name__ == '__main__':   
     with app.app_context():
