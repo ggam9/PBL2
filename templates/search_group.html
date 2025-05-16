@@ -85,7 +85,8 @@
     }
 
     .search-box button:hover {
-      background-color: #00be00;
+      background-color: #206f4a;
+      transition: 0.2s;
     }
 
     .table {
@@ -128,8 +129,12 @@
     }
 
     .btn-success {
-      background-color: #4CAF50;
+      background-color: #32c882;
       color: white;
+    }
+    .btn-success:hover{
+      background-color: #206f4a;
+      transition: 0.2s;
     }
   </style>
 </head>
@@ -138,9 +143,9 @@
     <h1>🔍그룹 검색</h1>
     <!-- 검색 박스 및 필터 추가 -->
     <div class="search-box">
-      <input type="text" id="search-keyword" placeholder="Search by title">
+      <input type="text" id="search-keyword" placeholder="그룹명을 검색 해보세요">
       <select id="topic-filter">
-        <option value="">Select Topic</option>
+        <option value="">주제</option>
         <option value="프로그래밍">프로그래밍</option>
         <option value="언어">언어</option>
         <option value="자격증">자격증</option>
@@ -152,40 +157,28 @@
       <table class="table">
         <thead>
           <tr>
-            <th>Id</th>
-            <th>Title</th>
-            <th>Topic</th>
-            <th>Participants</th>
-            <th>Last Updated</th>
-            <th>Action</th>
+            <th>그룹명</th>
+            <th>주제</th>
+            <th>인원수</th>
+            <th></th>
           </tr>
         </thead>
         <tbody id="group-list">
           {% for post in posts %}
           <tr>
-            <td>{{ post.id }}</td>
             <td>
               <span>{{ post.title }}</span>
-              <button class="btn btn-link" onclick="toggleDetails({{ post.id }})">자세히</button>
+              <button class="btn btn-link" onclick="toggleDetails({{ post.id }})">소개글</button>
               <div id="details-{{ post.id }}" class="details" style="display: none;">
-                <p>Content: {{ post.content }}</p>
-                <p>Created At: {{ post.created_at }}</p>
-                <p>Updated At: {{ post.updated_at }}</p>
+                <p>소개글: {{ post.content }}</p>
               </div>
             </td>
             <td>{{ post.topic }}</td>
             <td>{{ post.participants|length }} / {{ post.max_participants }}</td>
-            <td>{{ post.updated_at }}</td>
             <td>
-              <a href="{{ url_for('edit_post', post_id=post.id) }}" class="btn btn-secondary">Edit</a>
-              <form action="{{ url_for('delete_post', post_id=post.id) }}" method="post" style="display:inline;">
-                <button type="submit" class="btn btn-danger">Delete</button>
               </form>
               <form action="{{ url_for('join_post', post_id=post.id) }}" method="post" style="display:inline;">
-                <button type="submit" class="btn btn-success">Join</button>
-              </form>
-              <form action="{{ url_for('group_page', post_id=post.id) }}" method="post" style="display:inline;">
-                <button type="submit" class="btn btn-success">grouppage</button>
+                <button type="submit" class="btn btn-success">가입</button>
               </form>
             </td>
           </tr>
