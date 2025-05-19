@@ -90,7 +90,7 @@
 
   <div class="bottom-buttons">
     <button onclick="endStudy()">공부 종료</button>
-    <button onclick="location.href='/videochat'">화상 스터디</button>
+    <button onclick="goToVideoChat()">화상 스터디</button>
     <button onclick="darkMode()">다크 모드</button>
   </div>
 
@@ -105,7 +105,11 @@
       window.onload = function() {
           socket.emit('join-time', { username: username, postId: postId });
       };
-  
+      function goToVideoChat() {   //화상채팅들어갈때 정보넘김
+        const username = encodeURIComponent("{{ username }}");
+        const postId = "{{ post_id }}";   
+       location.href = `/group/${postId}/videochat?username=${username}`;
+      }
       // 사용자 목록 및 시작 시간 업데이트
       socket.on('user_list', function(users) {
         const studyList = document.getElementById('study-list');
