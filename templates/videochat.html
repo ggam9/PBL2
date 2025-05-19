@@ -39,10 +39,46 @@
     border-radius:4px; 
     cursor:pointer; 
   }
-  </style>
+  #chatBox {
+  position: fixed;
+  top: 0;
+  right: -320px; /* 숨김 상태 */
+  width: 300px;
+  height: 100%;
+  background-color: rgba(30, 30, 30, 0.95); /* 옅은 검정 투명도 */
+  color: #fff;
+  box-shadow: -2px 0 5px rgba(0,0,0,0.5);
+  transition: right 0.3s ease-in-out;
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+}
+
+#chatBox.show {
+  right: 0; /* 보일 때 */
+}
+
+#chatMessages {
+  flex: 1;
+  padding: 10px;
+  overflow-y: auto;
+  font-size: 14px;
+}
+
+#chatInput {
+  border: none;
+  padding: 12px;
+  font-size: 14px;
+  background-color: #222;
+  color: white;
+  outline: none;
+  border-top: 1px solid #444;
+}
+</style>
+
 
 </head>
-<body>
+<body data-username="{{ username }}" data-postid="{{ post_id }}">
   <div id="remoteContainer" class="video-grid"></div>
   <div id="localContainer" class="local-video"></div>
 
@@ -54,6 +90,14 @@
     <button id="btnChat">채팅</button>
   </div>
 
+  
+  
+   
+ 
   <script type="module" src="/static/app.js"></script>
+  <div id="chatBox">
+    <div id="chatMessages"></div>
+    <input id="chatInput" type="text" placeholder="메시지를 입력하세요..." />
+  </div>
 </body>
 </html>
