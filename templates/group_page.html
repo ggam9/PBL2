@@ -182,10 +182,7 @@ function checkTasks(postId) {
             if (quizCount > 0 || fileCount > 0 || data.schedule_count > 0) {
                 let message = "📋 해야 할 일이 있습니다:\n";
                 if (quizCount > 0) message += `- 퀴즈: ${quizCount}개 풀기 \n`;
-                if (fileCount > 0) message += `- 봐야 할 자료: ${fileCount}개\n`;
-                if (data.schedule_count > 0) {
-                    message += `📆 오늘일정: ${data.schedule_count}개\n`;
-                }else{message += `📆 오늘일정: 없음 \n`;}
+                if (fileCount > 0) message += `- 봐야 할 자료: ${fileCount}개\n`;                
                 
                 alert(message);
             } else {
