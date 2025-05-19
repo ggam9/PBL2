@@ -92,12 +92,51 @@
             width: 300px;
         }
     }
+    .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4); /* 반투명 배경 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999; /* 페이지의 어떤 요소보다 위에 */
+    }
+
+    .modal-content {
+    background-color: white;
+    padding: 30px;
+    border-radius: 10px;
+    width: 400px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .btn-close-popup {
+    background-color: #28a745;  /* 초록색 */
+    color: white;               /* 흰색 글씨 */
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 1em;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+   }
+
+   .btn-close-popup:hover {
+    background-color: #218838;  /* 살짝 어두운 초록 (hover 효과) */
+   }
 </style>
 <div style="display: flex; height: 100vh;">
     <div class="sidebar">
         <h2>메뉴</h2>
         <ul>
-            <li onclick="showContent('todo')">✅ 해야 할 일</li>
+            <li>
+                <a href="#" onclick="checkTasks({{ post.id }}); return false;" class="tablink">✅ 해야 할 일</a>
+            </li>
             <li>
                 <a href="{{ url_for('group_announcement', post_id=post.id) }}" class="tablink">📢 공지</a>
             </li>
@@ -129,4 +168,36 @@
         </div>
     </div>
 </div>
+<script>
+function checkTasks(postId) {
+    fetch(`/api/todo_status/${postId}`)
+        .then(response => {
+            if (!response.ok) throw new Error("네트워크 오류 발생");
+            return response.json();
+        })
+        .then(data => {
+            const quizCount = data.quiz_count;
+            const fileCount = data.file_count;
+
+            if (quizCount > 0 || fileCount > 0 || data.schedule_count > 0) {
+                let message = "📋 해야 할 일이 있습니다:\n";
+                if (quizCount > 0) message += `- 퀴즈: ${quizCount}개 풀기 \n`;
+                if (fileCount > 0) message += `- 봐야 할 자료: ${fileCount}개\n`;
+                if (data.schedule_count > 0) {
+                    message += `📆 오늘일정: ${data.schedule_count}개\n`;
+                }else{message += `📆 오늘일정: 없음 \n`;}
+                
+                alert(message);
+            } else {
+                alert("🎉 현재 할 일이 없습니다!");
+            }
+        })
+        .catch(error => {
+            console.error("할 일 확인 실패:", error);
+            alert("작업 정보를 불러오는 데 실패했습니다.");
+        });
+}
+</script>
+
+
 {% endblock %}
