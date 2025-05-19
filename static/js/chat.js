@@ -1,10 +1,17 @@
-let socket = io();
+let socket = io("/groupchat");
 let currentPrivateTarget = null;
 
-// -------------------- 그룹 채팅 --------------------
 socket.on('connect', () => {
-    socket.emit('join_room', { room: `post_${postId}` });
+    socket.emit('join_room', {
+        room: `post_${postId}`,
+        post_id: postId,
+        username: currentUsername
+    });
 });
+
+
+// -------------------- 그룹 채팅 --------------------
+
 
 function sendGroupMessage() {
     const input = document.getElementById('groupMsg');
@@ -23,7 +30,7 @@ function sendGroupMessage() {
 socket.on('group_message', data => {
     const chatBox = document.getElementById('groupChatBox');
     const messageElement = document.createElement('div');
-    messageElement.innerHTML = `<b>${data.username}:</b> ${data.msg}`;
+    messageElement.innerHTML = `<b>${data.username}:</b> ${linkify(data.msg)}`;
     chatBox.appendChild(messageElement);
     chatBox.scrollTop = chatBox.scrollHeight;
 });
@@ -65,7 +72,7 @@ function sendPrivateMessage() {
 // 수신
 socket.on("private_message", ({ from, message }) => {
     const box = document.getElementById("privateChatBox");
-    box.innerHTML += `<div><strong>${from}</strong>: ${message}</div>`;
+    box.innerHTML += `<div><strong>${from}</strong>: ${linkify(message)}</div>`;
     box.scrollTop = box.scrollHeight;
 });
 
@@ -73,7 +80,47 @@ socket.on("load_private_chat", ({ messages }) => {
     const box = document.getElementById("privateChatBox");
     box.innerHTML = '';
     messages.forEach(msg => {
-        box.innerHTML += `<div><strong>${msg.from}</strong>: ${msg.message}</div>`;
+        box.innerHTML += `<div><strong>${msg.from}</strong>: ${linkify(msg.message)}</div>`;
     });
     box.scrollTop = box.scrollHeight;
+});
+//기타----------------------------------------------------------------
+function linkify(text) {
+    const urlPattern = /(https?:\/\/[^\s]+)/g;
+    return text.replace(urlPattern, url => {
+        return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+    });
+}
+socket.on('update_active_users', function(usernames) {
+    const userList = document.getElementById('activeUsers');
+    userList.innerHTML = '';
+    
+    usernames.forEach(username => {
+        const li = document.createElement('li');
+        li.innerHTML = `<span class="online-dot"></span> ${username}`;
+        userList.appendChild(li);
+    });
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    const groupInput = document.getElementById('groupMsg');
+    const privateInput = document.getElementById('privateMsg');
+
+    if (groupInput) {
+        groupInput.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendGroupMessage();
+            }
+        });
+    }
+
+    if (privateInput) {
+        privateInput.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendPrivateMessage();
+            }
+        });
+    }
 });
