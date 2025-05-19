@@ -1,7 +1,7 @@
 
 import { io } from 'https://cdn.socket.io/4.7.2/socket.io.esm.min.js';
 
-const socket = io('http://localhost:5000');
+const socket = io('http://localhost:5000/videochat');
 const config = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
 
 let localStream;
@@ -131,6 +131,7 @@ const postId  = document.body.dataset.postid;
   });
 
   socket.on('chat_message', ({ username, msg }) => {
+  console.log(`[RECEIVED] ${username}: ${msg}`);  // 로그 추가
   const messageElem = document.createElement('div');
   messageElem.textContent = `${username}: ${msg}`;
   chatMessages.appendChild(messageElem);
