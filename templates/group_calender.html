@@ -73,30 +73,7 @@
         <button type="button" class="btn btn-secondary" onclick="toggleScheduleForm()">Cancel</button>
     </form>
 </div>
-<div id="editScheduleForm" class="form-popup" style="display:none;">
-    <h4>Edit Schedule</h4>
-    <form method="POST">
-        <input type="hidden" id="edit_id" name="edit_id">
-        <div class="form-group">
-            <label for="edit_title">Title</label>
-            <input type="text" id="edit_title" name="edit_title" class="form-control" required>
-        </div>
-        <div class="form-group">
-            <label for="edit_description">Description</label>
-            <textarea id="edit_description" name="edit_description" class="form-control" rows="3" required></textarea>
-        </div>
-        <div class="form-group">
-            <label for="edit_date">Date and Time</label>
-            <input type="datetime-local" id="edit_date" name="edit_date" class="form-control" required>
-        </div>
-        <button type="submit" class="btn btn-success">Update</button>
-    </form>
-    <form method="POST" style="margin-top: 10px;">
-        <input type="hidden" id="delete_id" name="delete_id">
-        <button type="submit" class="btn btn-danger">Delete</button>
-        <button type="button" class="btn btn-secondary" onclick="toggleEditForm()">Cancel</button>
-    </form>
-</div>
+
 <h4>Upcoming Schedules</h4>
 <div id="calendar"></div>
 
@@ -111,25 +88,14 @@ document.addEventListener('DOMContentLoaded', function() {
         events: [
             {% for schedule in schedules %}
             {
-                id: '{{ schedule.id }}',
                 title: '{{ schedule.title }}',
                 start: '{{ schedule.date.isoformat() }}',
-                description: `{{ schedule.description }}`
+                description: '{{ schedule.description }}'
             },
             {% endfor %}
         ],
         eventClick: function(info) {
-            document.getElementById('edit_id').value = info.event.id;
-            document.getElementById('edit_title').value = info.event.title;
-            document.getElementById('edit_description').value = info.event.extendedProps.description;
-
-            let dt = new Date(info.event.start);
-            const formatted = dt.toISOString().slice(0, 16);
-            document.getElementById('edit_date').value = formatted;
-
-            document.getElementById('delete_id').value = info.event.id;
-
-            document.getElementById('editScheduleForm').style.display = 'block';
+            alert('Title: ' + info.event.title + '\nDescription: ' + info.event.extendedProps.description);
         }
     });
     calendar.render();
@@ -138,10 +104,6 @@ document.addEventListener('DOMContentLoaded', function() {
 function toggleScheduleForm() {
     var form = document.getElementById('scheduleForm');
     form.style.display = form.style.display === 'none' ? 'block' : 'none';
-}
-function toggleEditForm() {
-    var form = document.getElementById('editScheduleForm');
-    form.style.display = 'none';
 }
 </script>
 {% endblock %}
