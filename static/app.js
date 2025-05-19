@@ -8,6 +8,9 @@ let localStream;
 const peers = {};
 const remoteContainer = document.getElementById('remoteContainer');
 const localContainer  = document.getElementById('localContainer');
+const chatBox = document.getElementById('chatBox');
+const chatMessages = document.getElementById('chatMessages');
+const chatInput = document.getElementById('chatInput');
 
 // 버튼 요소
 const btnMute  = document.getElementById('btnMute');
@@ -15,6 +18,11 @@ const btnCam   = document.getElementById('btnCam');
 const btnShare = document.getElementById('btnShare');
 const btnEnd   = document.getElementById('btnEnd');
 const btnChat  = document.getElementById('btnChat');
+
+
+const username = document.body.dataset.username;
+const postid  =  document.body.dataset.postid;
+const postId  = document.body.dataset.postid;
 
 (async () => {
   try {
@@ -32,8 +40,9 @@ const btnChat  = document.getElementById('btnChat');
   localVideo.muted   = true;
   localContainer.append(localVideo);
 
-  const userId = Math.random().toString(36).substr(2, 9);
-  socket.emit('join', { user_id: userId });
+  //const userId = Math.random().toString(36).substr(2, 9); username을 user_id로 사용
+  socket.emit('join', { user_id: username  });
+  socket.emit('join_room', { room: `room-${postid}`, user_id: username });
 
   // 기존 참가자
   socket.on('all-users', ({ peers: list }) => {
@@ -98,12 +107,36 @@ const btnChat  = document.getElementById('btnChat');
   btnEnd.addEventListener('click', () => {
     // 모든 피어 연결 종료
     Object.values(peers).forEach(pc => pc.close());
-    window.location.reload();
+    window.location.href = `/group/${postId}/studymode`;
+    //window.location.reload();
   });
+  
 
   btnChat.addEventListener('click', () => {
-    alert('채팅 기능은 아직 구현되지 않았습니다.');
+    
+    chatBox.classList.toggle('show');
   });
+
+   chatInput.addEventListener('keydown', e => {
+   if (e.key === 'Enter' && chatInput.value.trim()) {
+    const msg = chatInput.value.trim();
+    socket.emit('chat_message', {
+      room: `room-${postid}`,  // 방 이름 동적 설정
+      msg: msg,
+      user_id: username,
+      username: username
+    });
+    chatInput.value = '';
+   }
+  });
+
+  socket.on('chat_message', ({ username, msg }) => {
+  const messageElem = document.createElement('div');
+  messageElem.textContent = `${username}: ${msg}`;
+  chatMessages.appendChild(messageElem);
+  chatMessages.scrollTop = chatMessages.scrollHeight; // 자동 스크롤
+  });
+ 
 
 })();
 
@@ -138,4 +171,3 @@ function createPeer(sid, user_id, isInitiator) {
   }
   return pc;
 }
-
