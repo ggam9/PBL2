@@ -7,9 +7,10 @@ from wtforms.validators import DataRequired, Length, EqualTo
 import bcrypt, os
 from datetime import datetime
 from datetime import timedelta
+from datetime import date
 from werkzeug.utils import secure_filename
 from flask import send_from_directory
-
+from collections import defaultdict
 app = Flask(__name__)
 
 # 파일 업로드 관리리
@@ -44,7 +45,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 app.config['SECRET_KEY'] = 'your_secret_key'
 db = SQLAlchemy(app)
 
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(app, cors_allowed_origins="*", manage_session=True)
 active_users = {
     2: {  # 그룹 ID가 2인 경우
         '다른 접속자가 없습니다': datetime.now(),
@@ -350,16 +351,42 @@ def group_chat(post_id):
     participants = [pu.user for pu in post.participants]
        
     return render_template('group_chat.html', post=post,participants=participants)
+#-----------------------------------------------------------------
+#실시간조회목록 띄우기
+# 유저 접속자 정보
+active_users = defaultdict(set)  # post_id: set(usernames)
+user_socket_map = {}  # sid: (username, post_id)
 
-@socketio.on('join_room')
+@socketio.on('join_room', namespace='/groupchat')
 def handle_join_room(data):
-    room = data.get('room')
-    user_id = data.get('user_id') or session.get('user_id')  # 없을 경우 대비
-    join_room(room)
-    print(f"[join_room] user {user_id} joined room {room}")
+    room = data.get('room')  # e.g., "post_3"
+    post_id = str(data.get('post_id'))
+    username = data.get('username')
 
+    if room and post_id and username:
+        join_room(room)
+        active_users[post_id].add(username)
+        user_socket_map[request.sid] = (username, post_id)
 
-@socketio.on('group_message')
+        emit('update_active_users', list(active_users[post_id]), room=room)
+        print(f"[groupchat] {username} joined room {room}")
+
+@socketio.on('disconnect', namespace='/groupchat')
+def handle_disconnect():
+    sid = request.sid
+    user_info = user_socket_map.pop(sid, None)
+
+    if user_info:
+        username, post_id = user_info
+        room = f'post_{post_id}'
+
+        active_users[post_id].discard(username)
+        emit('update_active_users', list(active_users[post_id]), room=room)
+        print(f"[groupchat] {username} disconnected from room {room}")
+   
+#-----------------------------------------------------------------
+
+@socketio.on('group_message', namespace='/groupchat')
 def handle_group_message(data):
     room = data.get('room')
     msg = data.get('msg')
@@ -367,8 +394,8 @@ def handle_group_message(data):
 
     user = User.query.get(user_id)
     if not user:
-        print(f"[group_message] Invalid user ID: {user_id}")
-        return
+       print(f"[group_message] Invalid user ID: {user_id}")
+       return
 
     print(f"[group_message] ({room}) {user.username}: {msg}")
 
@@ -376,9 +403,10 @@ def handle_group_message(data):
         'username': user.username,
         'msg': msg
     }, room=room)
+    
 
 
-@socketio.on("private_message")
+@socketio.on("private_message", namespace='/groupchat')
 def handle_private_message(data):
     from_username = data["from"]
     to_username = data["to"]
@@ -401,7 +429,7 @@ def handle_private_message(data):
     emit("private_message", {"from": from_username, "message": message}, room=room)
 
 
-@socketio.on("load_private_chat")
+@socketio.on("load_private_chat", namespace='/groupchat')
 def handle_load_private_chat(data):
     from_username = data["from"]
     to_username = data["to"]
@@ -617,16 +645,43 @@ def group_calender(post_id):
         return redirect(url_for('/'))
     
     if request.method == 'POST':
-        # Schedule creation logic
-        title = request.form['title']
-        description = request.form['description']
-        date_str = request.form['date']
-        date = datetime.strptime(date_str, '%Y-%m-%dT%H:%M')
-        new_schedule = Schedule(title=title, description=description, date=date, post_id=post_id)
-        db.session.add(new_schedule)
-        db.session.commit()
-        flash('Schedule created successfully!', 'success')
-        return redirect(url_for('group_calender', post_id=post_id))
+        # 1️⃣ 일정 삭제
+        if 'delete_id' in request.form:
+            schedule_id = int(request.form['delete_id'])
+            schedule = db.session.get(Schedule, schedule_id)
+            if schedule and schedule.post_id == post_id:
+                db.session.delete(schedule)
+                db.session.commit()
+                flash('일정이 삭제되었습니다.', 'success')
+            else:
+                flash('일정을 찾을 수 없습니다.', 'danger')
+            return redirect(url_for('group_calender', post_id=post_id))
+
+        # 2️⃣ 일정 수정
+        elif 'edit_id' in request.form:
+            schedule_id = int(request.form['edit_id'])
+            schedule = db.session.get(Schedule, schedule_id)
+            if schedule and schedule.post_id == post_id:
+                schedule.title = request.form['edit_title']
+                schedule.description = request.form['edit_description']
+                schedule.date = datetime.strptime(request.form['edit_date'], '%Y-%m-%dT%H:%M')
+                db.session.commit()
+                flash('일정이 수정되었습니다.', 'success')
+            else:
+                flash('일정을 찾을 수 없습니다.', 'danger')
+            return redirect(url_for('group_calender', post_id=post_id))
+
+        # 3️⃣ 일정 생성
+        else:
+            title = request.form['title']
+            description = request.form['description']
+            date_str = request.form['date']
+            date = datetime.strptime(date_str, '%Y-%m-%dT%H:%M')
+            new_schedule = Schedule(title=title, description=description, date=date, post_id=post_id)
+            db.session.add(new_schedule)
+            db.session.commit()
+            flash('일정이 생성되었습니다.', 'success')
+            return redirect(url_for('group_calender', post_id=post_id))
     
     schedules = Schedule.query.filter_by(post_id=post_id).order_by(Schedule.date).all()
     
@@ -810,6 +865,33 @@ def handle_chat_message(data):
         'msg': msg
     }, room=room)
 
+#--해야할일 기능 알림구현---------------------------------------------------------------
+@app.route('/api/todo_status/<int:post_id>')
+def get_todo_status(post_id):
+    # 퀴즈 개수 조회
+    quiz_count = Quiz.query.filter_by(post_id=post_id).count()
+
+    # 공유 자료 중 실제 파일이 있는 디렉토리 수 또는 파일 수 계산
+    group_folder = os.path.join(app.config['UPLOAD_FOLDER'], str(post_id))
+    file_count = 0
+    if os.path.exists(group_folder):
+        for root, dirs, files in os.walk(group_folder):
+            if len(files) > 0:
+                file_count += len(files)  # 또는 file_count += 1 if just want directory count
+
+    # 오늘 일정 개수 (날짜만 비교)
+    today = date.today()
+    schedule_count = Schedule.query.filter(
+        Schedule.post_id == post_id,
+        db.func.date(Schedule.date) == today
+    ).count()
+
+
+    return jsonify({
+        'quiz_count': quiz_count,
+        'file_count': file_count,
+        'schedule_count': schedule_count
+    })
 
 
 # 애플리케이션 실행
