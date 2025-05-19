@@ -758,12 +758,12 @@ app.config['SECRET_KEY'] = 'secret!'
 ROOM = 'mesh_room'
 users = {}  # sid -> user_id
 
-@socketio.on('connect')
+@socketio.on('connect',namespace='/videochat')
 def handle_connect(auth):
     sid = request.sid
     print('Client connected:', sid, 'auth:', auth)
 
-@socketio.on('join')
+@socketio.on('join',namespace='/videochat')
 def handle_join(data):
     user_id = data['user_id']
     sid = request.sid
@@ -775,7 +775,7 @@ def handle_join(data):
     peers = [{'user_id': uid, 'sid': s} for s, uid in users.items() if s != sid]
     emit('all-users', {'peers': peers})
 
-@socketio.on('offer')
+@socketio.on('offer',namespace='/videochat')
 def handle_offer(data):
     target = data['target_sid']
     sid    = request.sid
@@ -785,7 +785,7 @@ def handle_offer(data):
         'sender': sid
     }, room=target)
 
-@socketio.on('answer')
+@socketio.on('answer',namespace='/videochat')
 def handle_answer(data):
     target = data['target_sid']
     sid    = request.sid
@@ -795,7 +795,7 @@ def handle_answer(data):
         'sender': sid
     }, room=target)
 
-@socketio.on('ice-candidate')
+@socketio.on('ice-candidate',namespace='/videochat')
 def handle_ice(data):
     target = data['target_sid']
     sid    = request.sid
@@ -805,7 +805,7 @@ def handle_ice(data):
         'sender':    sid
     }, room=target)
 
-@socketio.on('disconnect')
+@socketio.on('disconnect',namespace='/videochat')
 def handle_disconnect(sid=None):
     # sid가 넘어오지 않으면 request.sid 사용
     sid = sid or request.sid
@@ -820,7 +820,17 @@ def handle_disconnect(sid=None):
     emit('user-disconnected', {'user_id': user_id, 'sid': sid}, room=ROOM)
     print('Client disconnected', sid)
 #-----------화상비디오 채팅-----------
-@socketio.on('chat_message')
+@socketio.on('join_room',namespace='/videochat')
+def handle_join_room(data):
+    room = data.get('room')
+    username = data.get('username', 'Unknown')
+    join_room(room)
+    print(f"{username} joined room {room}")
+    emit('status', {'msg': f'{username}님이 방에 입장했습니다.'}, room=room)
+
+
+
+@socketio.on('chat_message',namespace='/videochat')
 def handle_chat_message(data):
     room = data.get('room')
     msg = data.get('msg')
