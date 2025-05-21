@@ -84,13 +84,25 @@
 <body>
   <h2>📚 공부 모드</h2>
 
+  <div class="group-select">
+    <label for="group-dropdown">참여한 그룹 선택:</label>
+    <select id="group-dropdown">
+      <option value="">그룹을 선택하세요</option>
+      <option value="0">오픈방</option>
+      {% for pu in joined_posts %}
+      <option value="{{ pu.post.id }}">{{ pu.post.title }}</option>
+      {% endfor %}
+    </select>
+    <button onclick="startStudy()">스터디 시작</button>
+  </div>
+  
   <div class="study-list" id="study-list">
     <!-- 사용자 목록이 여기 추가됩니다. -->
   </div>
 
   <div class="bottom-buttons">
     <button onclick="endStudy()">공부 종료</button>
-    <button onclick="goToVideoChat()">화상 스터디</button>
+    <button onclick="location.href='/videochat'">화상 스터디</button>
     <button onclick="darkMode()">다크 모드</button>
   </div>
 
@@ -105,11 +117,7 @@
       window.onload = function() {
           socket.emit('join-time', { username: username, postId: postId });
       };
-      function goToVideoChat() {   //화상채팅들어갈때 정보넘김
-        const username = encodeURIComponent("{{ username }}");
-        const postId = "{{ post_id }}";   
-       location.href = `/group/${postId}/videochat?username=${username}`;
-      }
+  
       // 사용자 목록 및 시작 시간 업데이트
       socket.on('user_list', function(users) {
         const studyList = document.getElementById('study-list');
@@ -150,7 +158,17 @@
         // leave 이벤트 전송
         socket.emit('leave-time', { username: username, postId: postId });
         // 페이지 이동
-        location.href = '/';
+      }
+
+      function startStudy() {
+        const dropdown = document.getElementById('group-dropdown');
+        const selectedPostId = dropdown.value;
+        if (selectedPostId) {
+          socket.emit('leave-time', { username: username, postId: postId });
+          location.href = `/group/${selectedPostId}/studymode`;
+        } else {
+          alert('그룹을 선택하세요.');
+        }
       }
   
       // 창이 닫히거나 페이지를 벗어날 때 leave 이벤트 전송
