@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block title %}그룹 검색{% endblock %}
+
+{% block content %}
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🔍그룹 검색</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      height: 100vh;
+      flex-direction: column;
+      background-color: #fff;
+    }
+
+    .topbar {
+      background: #fff;
+      padding: 0 200px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      height: 60px;
+      border-bottom: 1px solid #ccc;
+    }
+
+    .topbar a {
+      font-size: 22px;
+      font-weight: bold;
+      color: #000;
+      text-decoration: none;
+    }
+
+    .container {
+  width: 100%; /* 전체 너비 사용 */
+  max-width: 1200px; /* 최대 너비 설정 */
+  margin: 0 auto; /* 중앙 정렬 */
+  padding: 20px; /* 적절한 패딩 설정 */
+  background-color: #fff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+}
+
+    .search-box {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .search-box input {
+      padding: 12px;
+      margin-right: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      width: 100%;
+      max-width: 300px;
+      background: #fff;
+    }
+
+    .search-box select {
+      padding: 12px;
+      margin-right: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background: #fff;
+    }
+
+    .search-box button {
+      padding: 12px;
+      background: #32c882;
+      border: none;
+      border-radius: 5px;
+      color: white;
+      cursor: pointer;
+    }
+
+    .search-box button:hover {
+      background-color: #00be00;
+    }
+
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    .table th, .table td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+
+    .table th {
+      background-color: #f2f2f2;
+    }
+
+    .btn {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin: 0 5px;
+    }
+
+    .btn-primary {
+      background-color: #32c882;
+      color: white;
+    }
+
+    .btn-secondary {
+      background-color: #f2f2f2;
+      color: black;
+    }
+
+    .btn-danger {
+      background-color: #f44336;
+      color: white;
+    }
+
+    .btn-success {
+      background-color: #4CAF50;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔍그룹 검색</h1>
+    <!-- 검색 박스 및 필터 추가 -->
+    <div class="search-box">
+        <input type="text" id="search-keyword" placeholder="Search by title">
+        <select id="topic-filter">
+            <option value="">Select Topic</option>
+            {% for topic in topics %}
+            <option value="{{ topic }}">{{ topic }}</option>
+            {% endfor %}
+        </select>
+        <button onclick="filterGroups()">Search</button>
+    </div>
+
+    <div class="mt-4">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Id</th>
+                    <th>Title</th>
+                    <th>Topic</th>
+                    <th>Participants</th>
+                    <th>Last Updated</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="group-list">
+                {% for post in posts %}
+                <tr>
+                    <td>{{ post.id }}</td>
+                    <td>
+                        <span>{{ post.title }}</span>
+                        <button class="btn btn-link" onclick="toggleDetails({{ post.id }})">자세히</button>
+                        <div id="details-{{ post.id }}" class="details" style="display: none;">
+                            <p>Content: {{ post.content }}</p>
+                            <p>Created At: {{ post.created_at }}</p>
+                            <p>Updated At: {{ post.updated_at }}</p>
+                        </div>
+                    </td>
+                    <td>{{ post.topic }}</td>
+                    <td>{{ post.participants|length }} / {{ post.max_participants }}</td>
+                    <td>{{ post.updated_at }}</td>
+                    <td>
+                        <a href="{{ url_for('edit_post', post_id=post.id) }}" class="btn btn-secondary">Edit</a>
+                        <form action="{{ url_for('delete_post', post_id=post.id) }}" method="post" style="display:inline;">
+                            <button type="submit" class="btn btn-danger">Delete</button>
+                        </form>
+                        <form action="{{ url_for('join_post', post_id=post.id) }}" method="post" style="display:inline;">
+                            <button type="submit" class="btn btn-success">Join</button>
+                        </form>
+                        <form action="{{ url_for('group_page', post_id=post.id) }}" method="post" style="display:inline;">
+                            <button type="submit" class="btn btn-success">grouppage</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    function filterGroups() {
+        var keyword = document.getElementById('search-keyword').value.toLowerCase();
+        var topic = document.getElementById('topic-filter').value.toLowerCase();
+        var rows = document.querySelectorAll('#group-list tr');
+        rows.forEach(function(row) {
+            var title = row.querySelector('td:nth-child(2) span').innerText.toLowerCase();
+            var rowTopic = row.querySelector('td:nth-child(3)').innerText.toLowerCase();
+            if ((title.includes(keyword) || keyword === '') && (rowTopic.includes(topic) || topic === '')) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    function toggleDetails(postId) {
+        var detailsDiv = document.getElementById('details-' + postId);
+        if (detailsDiv.style.display === 'none') {
+            detailsDiv.style.display = 'block';
+        } else {
+            detailsDiv.style.display = 'none';
+        }
+    }
+</script>
+{% endblock %}
