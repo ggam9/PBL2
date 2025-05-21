@@ -387,8 +387,8 @@ def handle_disconnect():
         username, post_id = user_info
         room = f'post_{post_id}'
 
-        active_users[post_id].discard(username)
-        emit('update_active_users', list(active_users[post_id]), room=room)
+        active_users2[post_id].discard(username)
+        emit('update_active_users', list(active_users2[post_id]), room=room)
         print(f"[groupchat] {username} disconnected from room {room}")
    
 #-----------------------------------------------------------------
