@@ -9,7 +9,8 @@ from datetime import datetime
 from datetime import timedelta
 from werkzeug.utils import secure_filename
 from flask import send_from_directory
-from collections import defaultdict
+
+
 app = Flask(__name__)
 
 # 파일 업로드 관리
@@ -18,27 +19,20 @@ UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static', 'uploads')
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+#ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'docx'}
+#파일 형식제한 미사용
+def allowed_file(filename):
+    return True
+#   return '.' in filename and \
+#           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-# 디렉토리별 허용 확장자 정의
-ALLOWED_EXTENSIONS_BY_TYPE = {
-    'documents': {'txt', 'pdf', 'doc', 'docx'},
-    'images': {'png', 'jpg', 'jpeg', 'gif'},
-    'videos': {'mp4', 'avi', 'mov', 'mkv'}
-}
-
-def allowed_file(filename, subdirectory):
-    ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
-    return subdirectory in ALLOWED_EXTENSIONS_BY_TYPE and ext in ALLOWED_EXTENSIONS_BY_TYPE[subdirectory]
-
-def upload_file(file, directory_path, subdirectory):
-    if file and allowed_file(file.filename, subdirectory):
+def upload_file(file, directory_path):
+    if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
         file_path = os.path.join(directory_path, filename)
         file.save(file_path)
-        return filename.replace('\\', '/')  # 슬래시 통일
+        return filename.replace('\\', '/')  # 슬래시로 변환하여 반환
     return None
-
-
 # 세션 설정
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=1)  # 1시간 후 자동 만료
 app.config['SESSION_PERMANENT'] = False  # 브라우저가 꺼지면 세션 삭제
@@ -53,13 +47,7 @@ app.config['SECRET_KEY'] = 'your_secret_key'
 db = SQLAlchemy(app)
 
 socketio = SocketIO(app, cors_allowed_origins="*")
-active_users = {
-    2: {  # 그룹 ID가 2인 경우
-        '다른 접속자가 없습니다': datetime.now(),
-    }
-}
-
-
+active_users = {}
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -78,8 +66,7 @@ class User(db.Model):
 
     def __repr__(self):
         return f"User('{self.username}', '{self.email}', '{self.status}')"
-
-
+    
 # 회원가입 폼 정의
 class SignupForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email(message='Invalid email address'), Length(max=120)])
@@ -178,24 +165,16 @@ class PrivateMessage(db.Model):
         return f"PrivateMessage('{self.from_user}', '{self.to_user}', '{self.message}')"
 
 
-#모든 페이지에서 실행
-#로그인 유저 상태표시
-@app.before_request
-def load_user_status():
-    if 'user_id' in session:
-        user = db.session.get(User, session['user_id'])
-        g.user_status = user.status if user else 'offline'
-    else:
-        g.user_status = 'offline'
 
-@app.context_processor
-def inject_user_status():
-    return dict(user_status=g.get('user_status', 'offline'))
 
 
 # 라우트 정의
 @app.route('/')
 def root():
+    if 'user_id' in session:
+        user = db.session.get(User, session['user_id'])
+        user_status = user.status if user else 'offline'
+        session['user_status'] = user_status
     return redirect(url_for('beginer'))
 
 @app.route('/beginer')
@@ -203,10 +182,12 @@ def beginer():
     if 'user_id' not in session:
         flash('Please log in to access this page.', 'warning')
         return redirect(url_for('login'))
-    return render_template('beginer.html')
-
-
-
+    
+    user_status = session.get('user_status', 'offline')
+    return render_template('beginer.html', user_status=user_status)
+@socketio.on('chat_message')
+def handle_chat_message(data):
+    emit('chat_message', data, broadcast=True)
 # 보호된 index2 페이지
 @app.route('/index2')
 def index2():
@@ -275,6 +256,7 @@ def logout():
     session.clear()    
     flash('로그아웃 되었습니다.', 'info')
     return redirect(url_for('login'))
+    
 
 
 @app.route('/create_post', methods=['GET', 'POST'])
@@ -382,52 +364,24 @@ def group_announcement(post_id):
     announcements = Announcement.query.filter_by(post_id=post_id).order_by(Announcement.created_at.desc()).all()
     return render_template('group_announcement.html', post=post, announcements=announcements, current_role=current_role)
 
-@app.route('/group_chat/<int:post_id>') 
+@app.route('/group/<int:post_id>/chat', methods=['GET', 'POST'])
 def group_chat(post_id):
     if 'user_id' not in session:
         flash('Please log in to access this page.', 'warning')
         return redirect(url_for('login'))
     
-    post = Post.query.get_or_404(post_id) 
-    participants = [pu.user for pu in post.participants]
-       
-    return render_template('group_chat.html', post=post,participants=participants)
-#-----------------------------------------------------------------
-#실시간조회목록 띄우기
-# 유저 접속자 정보
-active_users2 = defaultdict(set)  # post_id: set(usernames)
-user_socket_map = {}  # sid: (username, post_id)
+    post = db.session.get(Post, post_id)
+    return render_template('group_chat.html', post=post, logged_in=True)
 
-@socketio.on('join_room', namespace='/groupchat')
+@socketio.on('join_room')
 def handle_join_room(data):
-    room = data.get('room')  # e.g., "post_3"
-    post_id = str(data.get('post_id'))
-    username = data.get('username')
+    room = data.get('room')
+    user_id = data.get('user_id') or session.get('user_id')  # 없을 경우 대비
+    join_room(room)
+    print(f"[join_room] user {user_id} joined room {room}")
 
-    if room and post_id and username:
-        join_room(room)
-        active_users2[post_id].add(username)
-        user_socket_map[request.sid] = (username, post_id)
 
-        emit('update_active_users', list(active_users2[post_id]), room=room)
-        print(f"[groupchat] {username} joined room {room}")
-
-@socketio.on('disconnect', namespace='/groupchat')
-def handle_disconnect():
-    sid = request.sid
-    user_info = user_socket_map.pop(sid, None)
-
-    if user_info:
-        username, post_id = user_info
-        room = f'post_{post_id}'
-
-        active_users2[post_id].discard(username)
-        emit('update_active_users', list(active_users2[post_id]), room=room)
-        print(f"[groupchat] {username} disconnected from room {room}")
-   
-#-----------------------------------------------------------------
-
-@socketio.on('group_message',namespace='/groupchat')
+@socketio.on('group_message')
 def handle_group_message(data):
     room = data.get('room')
     msg = data.get('msg')
@@ -435,8 +389,8 @@ def handle_group_message(data):
 
     user = User.query.get(user_id)
     if not user:
-       print(f"[group_message] Invalid user ID: {user_id}")
-       return
+        print(f"[group_message] Invalid user ID: {user_id}")
+        return
 
     print(f"[group_message] ({room}) {user.username}: {msg}")
 
@@ -444,10 +398,9 @@ def handle_group_message(data):
         'username': user.username,
         'msg': msg
     }, room=room)
-    
 
 
-@socketio.on("private_message",namespace='/groupchat')
+@socketio.on("private_message")
 def handle_private_message(data):
     from_username = data["from"]
     to_username = data["to"]
@@ -470,7 +423,7 @@ def handle_private_message(data):
     emit("private_message", {"from": from_username, "message": message}, room=room)
 
 
-@socketio.on("load_private_chat",namespace='/groupchat')
+@socketio.on("load_private_chat")
 def handle_load_private_chat(data):
     from_username = data["from"]
     to_username = data["to"]
@@ -497,9 +450,6 @@ def handle_load_private_chat(data):
 def get_private_room(user1, user2):
     return "_".join(sorted([user1, user2]))
 
-
-
-
 @app.route('/group/<int:post_id>/share', methods=['GET', 'POST'])
 def group_share(post_id):
     if 'user_id' not in session:
@@ -508,29 +458,26 @@ def group_share(post_id):
     
     post = db.session.get(Post, post_id)
     group_folder = os.path.join(app.config['UPLOAD_FOLDER'], str(post_id))
-    
-    # 미리 정의된 디렉토리
+
+    # 그룹별 디렉토리 생성
     predefined_directories = ['documents', 'images', 'videos']
     for directory in predefined_directories:
         path = os.path.join(group_folder, directory)
         if not os.path.exists(path):
             os.makedirs(path)
 
-    
-
     if request.method == 'POST':
         file = request.files['file']
         subdirectory = request.form.get('subdirectory')
         if subdirectory in predefined_directories:
             subdirectory_path = os.path.join(group_folder, subdirectory)
-            filename = upload_file(file, subdirectory_path, subdirectory)
+            filename = upload_file(file, subdirectory_path)
             if filename:
                 flash('File successfully uploaded', 'success')
             else:
-              flash(f"Only {', '.join(ALLOWED_EXTENSIONS_BY_TYPE[subdirectory])} files are allowed.", 'upload_error')
+                flash('Invalid file type', 'danger')
         else:
-          flash('Invalid directory selected.', 'upload_error')
-
+            flash('Invalid directory', 'danger')
         return redirect(url_for('group_share', post_id=post_id))
     
     # 그룹별 파일 목록
@@ -553,17 +500,13 @@ def download_file(post_id, filename):
 @app.route('/group/<int:post_id>/delete/<path:filename>', methods=['POST'])
 def delete_file(post_id, filename):
     if 'user_id' not in session:
-        flash('Please log in to delete files.', 'warning')
         return redirect(url_for('login'))
     
     group_folder = os.path.join(app.config['UPLOAD_FOLDER'], str(post_id))
-    file_path = os.path.join(group_folder, filename.replace('/', os.sep))
+    file_path = os.path.join(group_folder, filename)
     
     if os.path.exists(file_path):
         os.remove(file_path)
-        flash('File deleted successfully', 'success')
-    else:
-        flash('File not found', 'danger')
     
     return redirect(url_for('group_share', post_id=post_id))
 
@@ -603,9 +546,9 @@ def group_members(post_id):
         
         db.session.commit()
         flash('Member role updated successfully!', 'success')
-    #유저 상태표시
-    user_statuses = {pu.user_id: pu.user.status for pu in post_users}
     
+    user_statuses = {pu.user_id: pu.user.status for pu in post_users}
+
     return render_template('group_members.html', post=post, post_users=post_users, current_role=current_role, user_statuses=user_statuses)
 
 @app.route('/group/<int:post_id>/quiz', methods=['GET', 'POST'])
@@ -716,20 +659,19 @@ def studymode(post_id):
     
     return render_template('studymode.html', username=user.username, post_id=post_id, joined_posts=joined_posts)
 
-@app.route('/group/<int:post_id>/videochat')
-def videochat(post_id):
+@app.route('/videochat')
+def videochat():
     if 'user_id' not in session:
         flash('Please log in to view your my_page', 'warning')
         return redirect(url_for('login'))
-    username = request.args.get('username') or session.get('username') or 'Guest'
-    return render_template('videochat.html',post_id=post_id,username=username)
-    
+    return render_template('videochat.html')
 
-
+#공부시간 측정
 socketio.on('connect')
 def handle_connect():
     # 클라이언트가 연결될 때마다 현재 활성 사용자 목록을 전송
     emit('user_list', list(active_users.get(2, {}).keys()))
+
 
 @socketio.on('join-time')
 def on_join(data):
@@ -738,14 +680,14 @@ def on_join(data):
     user = db.session.get(User, session['user_id'])
 
     if user:
-        # 그룹 방이 없는 경우 생성
+        # 그룹 방이 없는 경우 생성성
         if post_id not in active_users:
             active_users[post_id] = {}
         
         # 사용자 추가
         if username not in active_users[post_id]:
             active_users[post_id][username] = datetime.now()  # 시작 시간을 저장
-            user.status = 'studying'
+            user.status = '공부중'
             user.last_status_change = datetime.now()
             db.session.commit()
         
@@ -763,7 +705,7 @@ def on_leave(data):
         start_time = active_users[post_id].pop(username)
         session_duration = (datetime.now() - start_time).total_seconds()
         
-        # 공부시간 기록
+        # Update total study time in the database
         post_user = PostUser.query.filter_by(post_id=post_id, user_id=user.id).first()
         if user:
             user.total_study_time += int(session_duration)
@@ -787,7 +729,10 @@ def on_leave(data):
     
     # 사용자 목록을 해당 post_id 룸에 전송
     emit('user_list', list(active_users.get(post_id, {}).keys()), room=post_id)
-
+@app.route('/group/<int:post_id>/alert')
+def group_alert(post_id):
+    # 알림 페이지에 필요한 데이터가 있다면 여기에 추가
+    return render_template('group_alert.html', post_id=post_id)
 @app.route('/search_group')
 def search_group():
     if 'user_id' not in session:
@@ -812,7 +757,7 @@ def my_page():
     total_seconds = user.total_study_time
     hours, remainder = divmod(total_seconds, 3600)
     minutes, seconds = divmod(remainder, 60)
-    formatted_study_time = f"{hours}시간 {minutes}분 {seconds}초"
+    formatted_study_time = f"{int(hours)}시간 {int(minutes)}분 {int(seconds)}초"
 
     return render_template('my_page.html', joined_posts=joined_posts, formatted_study_time=formatted_study_time)
 
@@ -857,20 +802,19 @@ def update_password():
             flash('Current password is incorrect.', 'danger')
 
     return render_template('update_password.html', form=form)
-    
-#화상회의-----------------------------------------------------------------------------------------------------
 
+#화상회의-----------------------------------------------------------------------------------------------------
 app.config['SECRET_KEY'] = 'secret!'
 
 ROOM = 'mesh_room'
 users = {}  # sid -> user_id
 
-@socketio.on('connect',namespace='/videochat')
+@socketio.on('connect')
 def handle_connect(auth):
     sid = request.sid
     print('Client connected:', sid, 'auth:', auth)
 
-@socketio.on('join',namespace='/videochat')
+@socketio.on('join')
 def handle_join(data):
     user_id = data['user_id']
     sid = request.sid
@@ -882,7 +826,7 @@ def handle_join(data):
     peers = [{'user_id': uid, 'sid': s} for s, uid in users.items() if s != sid]
     emit('all-users', {'peers': peers})
 
-@socketio.on('offer',namespace='/videochat')
+@socketio.on('offer')
 def handle_offer(data):
     target = data['target_sid']
     sid    = request.sid
@@ -892,7 +836,7 @@ def handle_offer(data):
         'sender': sid
     }, room=target)
 
-@socketio.on('answer',namespace='/videochat')
+@socketio.on('answer')
 def handle_answer(data):
     target = data['target_sid']
     sid    = request.sid
@@ -902,7 +846,7 @@ def handle_answer(data):
         'sender': sid
     }, room=target)
 
-@socketio.on('ice-candidate',namespace='/videochat')
+@socketio.on('ice-candidate')
 def handle_ice(data):
     target = data['target_sid']
     sid    = request.sid
@@ -912,7 +856,7 @@ def handle_ice(data):
         'sender':    sid
     }, room=target)
 
-@socketio.on('disconnect',namespace='/videochat')
+@socketio.on('disconnect')
 def handle_disconnect(sid=None):
     # sid가 넘어오지 않으면 request.sid 사용
     sid = sid or request.sid
@@ -926,60 +870,6 @@ def handle_disconnect(sid=None):
     # 모두에게 알림
     emit('user-disconnected', {'user_id': user_id, 'sid': sid}, room=ROOM)
     print('Client disconnected', sid)
-#-----------화상비디오 채팅-----------
-@socketio.on('join_room',namespace='/videochat')
-def handle_join_room(data):
-    room = data.get('room')
-    username = data.get('username', 'Unknown')
-    join_room(room)
-    print(f"{username} joined room {room}")
-    emit('status', {'msg': f'{username}님이 방에 입장했습니다.'}, room=room)
-
-
-
-@socketio.on('chat_message',namespace='/videochat')
-def handle_chat_message(data):
-    room = data.get('room')
-    msg = data.get('msg')
-    #user_id = data.get('user_id') or session.get('user_id')
-    username = data.get('username') or 'Unknown'
-  
-    #user = User.query.get(user_id) if user_id else None
-    #username = user.username if user else f"Guest-{user_id[:5]}"
-
-    print(f"[chat_message] ({room}) {username}: {msg}")
-
-    emit('chat_message', {
-        'username': username,
-        'msg': msg
-    }, room=room)
-#--해야할일 기능 알림구현---------------------------------------------------------------
-@app.route('/group/<int:post_id>/group_alert')
-def group_alert(post_id):
-    post = Post.query.get_or_404(post_id)  # post 객체 불러오기
-
-    quiz_count = Quiz.query.filter_by(post_id=post_id).count()
-
-    group_folder = os.path.join(app.config['UPLOAD_FOLDER'], str(post_id))
-    file_count = 0
-    if os.path.exists(group_folder):
-        for root, dirs, files in os.walk(group_folder):
-            file_count += len(files)
-
-    schedule_count = Schedule.query.filter_by(post_id=post_id).count()
-
-    if quiz_count == 0 and file_count == 0 and schedule_count == 0:
-        return redirect(url_for("group_page", post_id=post_id))
-
-    return render_template("group_alert.html",
-                           post=post,
-                           post_id=post_id,
-                           quiz_count=quiz_count,
-                           file_count=file_count,
-                           schedule_count=schedule_count)
-
-
-
 # 애플리케이션 실행
 if __name__ == '__main__':   
     with app.app_context():
@@ -987,3 +877,4 @@ if __name__ == '__main__':
     
     socketio.run(app, debug=True)
    
+
