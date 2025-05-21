@@ -3,7 +3,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField
-from wtforms.validators import DataRequired, Length, EqualTo
+from wtforms.validators import DataRequired, Length, EqualTo, Email, Optional
 import bcrypt, os
 from datetime import datetime
 from datetime import timedelta
@@ -63,28 +63,49 @@ active_users = {
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(255), nullable=False, unique=True)
     username = db.Column(db.String(150), nullable=False, unique=True)
+    join_date = db.Column(db.DateTime, default=datetime.utcnow)
+    last_login = db.Column(db.DateTime, nullable=True)
+    phone_number = db.Column(db.String(20), nullable=True)
     password = db.Column(db.String(255), nullable=False)
-    last_accessed = db.Column(db.DateTime, nullable=True)
     joined_posts = db.relationship('PostUser', back_populates='user')
-    total_study_time = db.Column(db.Integer, default=0)  # Total study time in seconds
+    total_study_time = db.Column(db.Integer, default=0)
+    weekly_study_time = db.Column(db.Integer, default=0)
+    today_study_time = db.Column(db.Integer, default=0)
+    status = db.Column(db.String(20), default='offline')  # 사용자의 상태 필드
+    last_status_change = db.Column(db.DateTime, default=datetime.utcnow)
 
     def __repr__(self):
-        return f"User('{self.username}')"
+        return f"User('{self.username}', '{self.email}', '{self.status}')"
 
 
 # 회원가입 폼 정의
 class SignupForm(FlaskForm):
-    username = StringField('Username', validators=[DataRequired(), Length(min=4, max=25)])
+    email = StringField('Email', validators=[DataRequired(), Email(message='Invalid email address'), Length(max=120)])
     password = PasswordField('Password', validators=[DataRequired(), Length(min=6, max=35)])
     confirm_password = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password', message='Passwords must match.')])
     submit = SubmitField('Sign Up')
 
 # 로그인 폼 정의
 class LoginForm(FlaskForm):
-    username = StringField('Username', validators=[DataRequired(), Length(min=4, max=25)])
+    email = StringField('Email', validators=[DataRequired(), Email(message='Invalid email address'), Length(max=120)])
     password = PasswordField('Password', validators=[DataRequired(), Length(min=6, max=35)])
     submit = SubmitField('Login')
+
+#프로필 변경폼
+class UpdateProfileForm(FlaskForm):
+    email = StringField('Email', validators=[DataRequired(), Email(), Length(max=120)])
+    username = StringField('Username', validators=[DataRequired(), Length(min=4, max=25)])
+    phone_number = StringField('Phone Number', validators=[Optional(), Length(min=10, max=15)])
+    submit = SubmitField('Update Profile')
+
+#비밀번호 변경폼
+class UpdatePasswordForm(FlaskForm):
+    current_password = PasswordField('Current Password', validators=[DataRequired()])
+    new_password = PasswordField('New Password', validators=[DataRequired(), Length(min=6, max=35)])
+    confirm_new_password = PasswordField('Confirm New Password', validators=[EqualTo('new_password', message='Passwords must match.')])
+    submit = SubmitField('Update Password')
     
 # 게시글 모델 정의
 class Post(db.Model):
@@ -157,7 +178,19 @@ class PrivateMessage(db.Model):
         return f"PrivateMessage('{self.from_user}', '{self.to_user}', '{self.message}')"
 
 
+#모든 페이지에서 실행
+#로그인 유저 상태표시
+@app.before_request
+def load_user_status():
+    if 'user_id' in session:
+        user = db.session.get(User, session['user_id'])
+        g.user_status = user.status if user else 'offline'
+    else:
+        g.user_status = 'offline'
 
+@app.context_processor
+def inject_user_status():
+    return dict(user_status=g.get('user_status', 'offline'))
 
 
 # 라우트 정의
@@ -213,7 +246,7 @@ def signup():
     form = SignupForm()
     if form.validate_on_submit():
         hashed_password = bcrypt.hashpw(form.password.data.encode('utf-8'), bcrypt.gensalt())
-        new_user = User(username=form.username.data, password=hashed_password)
+        new_user = User(email=form.email.data, username=form.email.data, password=hashed_password)
         db.session.add(new_user)
         db.session.commit()
         flash('Account created successfully!', 'success')
@@ -224,7 +257,8 @@ def signup():
 def login():
     form = LoginForm()
     if form.validate_on_submit():
-        user = User.query.filter_by(username=form.username.data).first()
+        # 이메일을 기준으로 사용자 검색
+        user = User.query.filter_by(email=form.email.data).first()
         if user and bcrypt.checkpw(form.password.data.encode('utf-8'), user.password):
             session['user_id'] = user.id
             session['username'] = user.username  # ✅ 사용자 이름도 세션에 저장
@@ -232,7 +266,7 @@ def login():
             flash('Login successful!', 'success')
             return redirect(url_for('root'))
         else:
-            flash('Invalid username or password', 'danger')
+            flash('Invalid email or password', 'danger')
     return render_template('login.html', form=form)
 
 
@@ -569,8 +603,10 @@ def group_members(post_id):
         
         db.session.commit()
         flash('Member role updated successfully!', 'success')
+    #유저 상태표시
+    user_statuses = {pu.user_id: pu.user.status for pu in post_users}
     
-    return render_template('group_members.html', post=post, post_users=post_users, current_role=current_role)
+    return render_template('group_members.html', post=post, post_users=post_users, current_role=current_role, user_statuses=user_statuses)
 
 @app.route('/group/<int:post_id>/quiz', methods=['GET', 'POST'])
 def group_quiz(post_id):
@@ -672,9 +708,13 @@ def group_calender(post_id):
 
 @app.route('/group/<int:post_id>/studymode')
 def studymode(post_id):
-    if 'username' not in session:
+    if 'user_id' not in session:
         return redirect(url_for('login'))
-    return render_template('studymode.html', username=session['username'], post_id=post_id)
+    
+    user = db.session.get(User, session['user_id'])
+    joined_posts = user.joined_posts
+    
+    return render_template('studymode.html', username=user.username, post_id=post_id, joined_posts=joined_posts)
 
 @app.route('/group/<int:post_id>/videochat')
 def videochat(post_id):
@@ -695,15 +735,20 @@ def handle_connect():
 def on_join(data):
     username = data['username']
     post_id = data['postId']
-    
-    # 사용자가 없는 경우 추가
-    if post_id not in active_users:
-        active_users[post_id] = {}
-    
-    # 사용자 추가
-    if username not in active_users[post_id]:
-        active_users[post_id][username] = datetime.now()  # 시작 시간을 저장
-    
+    user = db.session.get(User, session['user_id'])
+
+    if user:
+        # 그룹 방이 없는 경우 생성
+        if post_id not in active_users:
+            active_users[post_id] = {}
+        
+        # 사용자 추가
+        if username not in active_users[post_id]:
+            active_users[post_id][username] = datetime.now()  # 시작 시간을 저장
+            user.status = '공부중'
+            user.last_status_change = datetime.now()
+            db.session.commit()
+        
     join_room(post_id)
     # 사용자 목록과 시작 시간을 클라이언트에 전송
     emit('user_list', {user: time.isoformat() for user, time in active_users[post_id].items()}, room=post_id)
@@ -712,16 +757,20 @@ def on_join(data):
 def on_leave(data):
     username = data['username']
     post_id = data['postId']
+    user = User.query.filter_by(username=username).first()
 
     if post_id in active_users and username in active_users[post_id]:
         start_time = active_users[post_id].pop(username)
         session_duration = (datetime.now() - start_time).total_seconds()
         
-        # Update total study time in the database
-        user = User.query.filter_by(username=username).first()
+        # 공부시간 기록
         post_user = PostUser.query.filter_by(post_id=post_id, user_id=user.id).first()
         if user:
             user.total_study_time += int(session_duration)
+            user.weekly_study_time += int(session_duration)
+            user.today_study_time += int(session_duration)
+            user.status = 'offline'
+            user.last_status_change = datetime.now()
             db.session.commit()
         if post_user:
             post_user.study_time += int(session_duration)
@@ -741,11 +790,15 @@ def on_leave(data):
 
 @app.route('/search_group')
 def search_group():
- if 'user_id' not in session:
-       flash('Please log in to access this page.', 'warning')
-       return redirect(url_for('login')) 
- posts = Post.query.all()
- return render_template('search_group.html',posts=posts,logged_in=True)   
+    if 'user_id' not in session:
+        flash('Please log in to access this page.', 'warning')
+        return redirect(url_for('login')) 
+
+    posts = Post.query.all()
+    topics = db.session.query(Post.topic).distinct().all()  # 주제 가져오기
+    topic_list = [t[0] for t in topics]  # 튜플에서 값을 추출하여 리스트로 변환
+
+    return render_template('search_group.html', posts=posts, topics=topic_list, logged_in=True) 
 
 @app.route('/my_page')
 def my_page():
@@ -762,6 +815,49 @@ def my_page():
     formatted_study_time = f"{hours}시간 {minutes}분 {seconds}초"
 
     return render_template('my_page.html', joined_posts=joined_posts, formatted_study_time=formatted_study_time)
+
+#프로필 업데이트
+@app.route('/update_profile', methods=['GET', 'POST'])
+def update_profile():
+    if 'user_id' not in session:
+        flash('Please log in to update your profile.', 'warning')
+        return redirect(url_for('login'))
+
+    user = db.session.get(User, session['user_id'])
+    form = UpdateProfileForm(obj=user)
+
+    if form.validate_on_submit():
+        user.email = form.email.data
+        user.username = form.username.data
+        user.phone_number = form.phone_number.data or None  # 빈칸 허용
+        db.session.commit()
+        flash('Your profile has been updated!', 'success')
+        return redirect(url_for('my_page'))
+
+    return render_template('update_profile.html', form=form)
+
+#비밀번호 변경
+@app.route('/update_password', methods=['GET', 'POST'])
+def update_password():
+    if 'user_id' not in session:
+        flash('Please log in to update your password.', 'warning')
+        return redirect(url_for('login'))
+
+    user = db.session.get(User, session['user_id'])
+    form = UpdatePasswordForm()
+
+    if form.validate_on_submit():
+        if bcrypt.checkpw(form.current_password.data.encode('utf-8'), user.password):
+            hashed_new_password = bcrypt.hashpw(form.new_password.data.encode('utf-8'), bcrypt.gensalt())
+            user.password = hashed_new_password
+            db.session.commit()
+            flash('Your password has been updated!', 'success')
+            return redirect(url_for('my_page'))
+        else:
+            flash('Current password is incorrect.', 'danger')
+
+    return render_template('update_password.html', form=form)
+    
 #화상회의-----------------------------------------------------------------------------------------------------
 
 app.config['SECRET_KEY'] = 'secret!'
