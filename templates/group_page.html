@@ -155,7 +155,7 @@
             <li>
                 <a href="{{ url_for('group_calender', post_id=post.id) }}" class="tablink">📆 일정</a>
             </li>            
-            <button onclick="location.href='{{ url_for('studymode', post_id=post.id) }}'">🖥️ 스터디 시작</button>
+            <button onclick="window.open('{{ url_for('studymode', post_id=post.id) }}', '_blank', width=700, height=600, top=50, left=50)">🖥️ 스터디 시작</button>        
         </ul>
     </div>
 
