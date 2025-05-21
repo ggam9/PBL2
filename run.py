@@ -858,27 +858,29 @@ def handle_chat_message(data):
         'msg': msg
     }, room=room)
 #--해야할일 기능 알림구현---------------------------------------------------------------
-@app.route('/api/todo_status/<int:post_id>')
-def get_todo_status(post_id):
-    # 퀴즈 개수 조회
+@app.route('/group/<int:post_id>/group_alert')
+def group_alert(post_id):
+    post = Post.query.get_or_404(post_id)  # post 객체 불러오기
+
     quiz_count = Quiz.query.filter_by(post_id=post_id).count()
 
-    # 공유 자료 중 실제 파일이 있는 디렉토리 수 또는 파일 수 계산
     group_folder = os.path.join(app.config['UPLOAD_FOLDER'], str(post_id))
     file_count = 0
     if os.path.exists(group_folder):
         for root, dirs, files in os.walk(group_folder):
-            if len(files) > 0:
-                file_count += len(files)  # 또는 file_count += 1 if just want directory count
+            file_count += len(files)
 
-    
+    schedule_count = Schedule.query.filter_by(post_id=post_id).count()
 
+    if quiz_count == 0 and file_count == 0 and schedule_count == 0:
+        return redirect(url_for("group_page", post_id=post_id))
 
-    return jsonify({
-        'quiz_count': quiz_count,
-        'file_count': file_count,
-        
-    })
+    return render_template("group_alert.html",
+                           post=post,
+                           post_id=post_id,
+                           quiz_count=quiz_count,
+                           file_count=file_count,
+                           schedule_count=schedule_count)
 
 
 
