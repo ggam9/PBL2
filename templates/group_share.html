@@ -3,29 +3,76 @@
 {% block title %}파일{% endblock %}
 
 {% block group_content %}
-<style>.group_content h2 {
+<style>
+.group_content h2 {
     margin-bottom: 20px;
+    font-size: 1.8em;
+    color: #155724;
 }
 
 .upload-form {
     margin-bottom: 30px;
-    padding: 15px;
-    background-color: #f8f9fa;
-    border-radius: 5px;
-    border: 1px solid #ddd;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 10px;
+    border: 1px solid #c3e6cb;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.upload-form .form-group {
+    width: 100%;
+    max-width: 400px;
+    margin-bottom: 15px;
+}
+
+.upload-form label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #155724;
+}
+
+.upload-form .form-control {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ced4da;
+    border-radius: 8px;
+}
+
+.upload-form button {
+    max-width: 200px;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px;
+    margin-top: 5px;
+    margin-bottom: 15px;
+    border: 1px solid #ced4da;
+    border-radius: 8px;
 }
 
 .btn {
-    margin: 5px 0;
-    padding: 10px 15px;
+    padding: 10px 20px;
     border: none;
-    border-radius: 5px;
+    border-radius: 8px;
     cursor: pointer;
+    font-weight: bold;
+    font-size: 0.95em;
 }
 
 .btn-primary {
-    background-color: #007bff;
+    background-color: #28a745;
     color: white;
+}
+
+.btn-primary:hover {
+    background-color: #218838;
 }
 
 .btn-danger {
@@ -33,14 +80,18 @@
     color: white;
 }
 
-.btn-link {
-    margin-left: 10px;
-    color: #007bff;
-    text-decoration: none;
+.btn-danger:hover {
+    background-color: #c82333;
 }
 
-.btn-link:hover {
+.btn-link {
+    color: #007bff;
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 0.95em;
     text-decoration: underline;
+    margin-right: 10px;
 }
 
 .file-list {
@@ -49,29 +100,83 @@
 }
 
 .file-item {
-    border: 1px solid #ddd;
-    padding: 10px;
-    margin-bottom: 10px;
-    border-radius: 5px;
+    border: 1px solid #c3e6cb;
+    padding: 15px 20px;
+    margin-bottom: 15px;
+    border-radius: 10px;
     background-color: #ffffff;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .file-item span {
     flex-grow: 1;
+    font-weight: 500;
+    color: #155724;
+    word-break: break-all;
+}
+
+.file-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.file-input {
+    display: none;  /* 실제 input 숨기기 */
+}
+
+.custom-file-upload {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #28a745;
+    color: white;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 0.95em;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    text-align: center;
+    border: none;
+}
+
+.custom-file-upload:hover {
+    background-color: #218838;
+}
+.file-upload-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.file-name {
+    font-size: 0.95em;
+    color: #155724;
+    font-weight: 500;
+    word-break: break-word;
+    max-width: 250px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 </style>
+
 <h2>{{ post.title }} 📁 자료 공유</h2>
 
 <form method="POST" enctype="multipart/form-data" class="upload-form">
     <div class="form-group">
-        <label for="file">Upload File</label>
-        <input type="file" id="file" name="file" class="form-control" required>
+        <label for="file">📎 Upload File</label>
+        <div class="file-upload-wrapper">
+         <label for="file" class="custom-file-upload">Choose File</label>
+         <span id="file-name" class="file-name">No file selected</span>
+        </div>
+     <input type="file" id="file" name="file" class="form-control file-input" required>
     </div>
     <div class="form-group">
-        <label for="subdirectory">Choose Directory</label>
+        <label for="subdirectory">📁 Choose Directory</label>
         <select id="subdirectory" name="subdirectory" class="form-control">
             <option value="documents">Documents</option>
             <option value="images">Images</option>
@@ -79,18 +184,30 @@
         </select>
     </div>
     <button type="submit" class="btn btn-primary">Upload</button>
+    {% with messages = get_flashed_messages(category_filter=['upload_error']) %}
+        {% if messages %}
+            <span style="color: red; margin-top: 10px;">{{ messages[0] }}</span>
+        {% endif %}
+    {% endwith %}
 </form>
-
-<h3>Available Files and Directories</h3>
+<script>
+    document.getElementById('file').addEventListener('change', function () {
+        const fileName = this.files[0] ? this.files[0].name : 'No file selected';
+        document.getElementById('file-name').textContent = fileName;
+    });
+</script>
+<h3 style="color:#155724;">Available Files and Directories</h3>
 <ul class="file-list">
     {% for item in dirs_and_files %}
     <li class="file-item">
         <span>{{ item }}</span>
         {% if not item.endswith('/') %}
-        <a href="{{ url_for('download_file', post_id=post.id, filename=item) }}" class="btn btn-link">Download</a>
-        <form method="POST" action="{{ url_for('delete_file', post_id=post.id, filename=item) }}" style="display:inline;">
-            <button type="submit" class="btn btn-danger">Delete</button>
-        </form>
+        <div class="file-actions">
+            <a href="{{ url_for('download_file', post_id=post.id, filename=item) }}" class="btn-link">Download</a>
+            <form method="POST" action="{{ url_for('delete_file', post_id=post.id, filename=item) }}" style="display:inline;">
+                <button type="submit" class="btn btn-danger">Delete</button>
+            </form>
+        </div>
         {% endif %}
     </li>
     {% endfor %}
