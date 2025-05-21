@@ -12,25 +12,33 @@ from flask import send_from_directory
 from collections import defaultdict
 app = Flask(__name__)
 
-# 파일 업로드 관리리
+# 파일 업로드 관리
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static', 'uploads')
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'docx'}
 
-def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+# 디렉토리별 허용 확장자 정의
+ALLOWED_EXTENSIONS_BY_TYPE = {
+    'documents': {'txt', 'pdf', 'doc', 'docx'},
+    'images': {'png', 'jpg', 'jpeg', 'gif'},
+    'videos': {'mp4', 'avi', 'mov', 'mkv'}
+}
 
-def upload_file(file, directory_path):
-    if file and allowed_file(file.filename):
+def allowed_file(filename, subdirectory):
+    ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
+    return subdirectory in ALLOWED_EXTENSIONS_BY_TYPE and ext in ALLOWED_EXTENSIONS_BY_TYPE[subdirectory]
+
+def upload_file(file, directory_path, subdirectory):
+    if file and allowed_file(file.filename, subdirectory):
         filename = secure_filename(file.filename)
         file_path = os.path.join(directory_path, filename)
         file.save(file_path)
-        return filename.replace('\\', '/')  # 슬래시로 변환하여 반환
+        return filename.replace('\\', '/')  # 슬래시 통일
     return None
+
+
 # 세션 설정
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=1)  # 1시간 후 자동 만료
 app.config['SESSION_PERMANENT'] = False  # 브라우저가 꺼지면 세션 삭제
@@ -466,7 +474,7 @@ def group_share(post_id):
     
     post = db.session.get(Post, post_id)
     group_folder = os.path.join(app.config['UPLOAD_FOLDER'], str(post_id))
-
+    
     # 미리 정의된 디렉토리
     predefined_directories = ['documents', 'images', 'videos']
     for directory in predefined_directories:
@@ -474,18 +482,21 @@ def group_share(post_id):
         if not os.path.exists(path):
             os.makedirs(path)
 
+    
+
     if request.method == 'POST':
         file = request.files['file']
         subdirectory = request.form.get('subdirectory')
         if subdirectory in predefined_directories:
             subdirectory_path = os.path.join(group_folder, subdirectory)
-            filename = upload_file(file, subdirectory_path)
+            filename = upload_file(file, subdirectory_path, subdirectory)
             if filename:
                 flash('File successfully uploaded', 'success')
             else:
-                flash('Invalid file type', 'danger')
+              flash(f"Only {', '.join(ALLOWED_EXTENSIONS_BY_TYPE[subdirectory])} files are allowed.", 'upload_error')
         else:
-            flash('Invalid directory', 'danger')
+          flash('Invalid directory selected.', 'upload_error')
+
         return redirect(url_for('group_share', post_id=post_id))
     
     # 그룹별 파일 목록
@@ -493,9 +504,8 @@ def group_share(post_id):
     if os.path.exists(group_folder):
         for root, dirs, filenames in os.walk(group_folder):
             for name in filenames:
-                dirs_and_files.append(os.path.relpath(os.path.join(root, name), group_folder))
-            for name in dirs:
-                dirs_and_files.append(os.path.relpath(os.path.join(root, name), group_folder) + '/')
+                rel_path = os.path.relpath(os.path.join(root, name), group_folder).replace(os.sep, '/')
+                dirs_and_files.append(rel_path)
 
     return render_template('group_share.html', post=post, dirs_and_files=dirs_and_files)
 
@@ -513,7 +523,7 @@ def delete_file(post_id, filename):
         return redirect(url_for('login'))
     
     group_folder = os.path.join(app.config['UPLOAD_FOLDER'], str(post_id))
-    file_path = os.path.join(group_folder, filename)
+    file_path = os.path.join(group_folder, filename.replace('/', os.sep))
     
     if os.path.exists(file_path):
         os.remove(file_path)
@@ -522,6 +532,7 @@ def delete_file(post_id, filename):
         flash('File not found', 'danger')
     
     return redirect(url_for('group_share', post_id=post_id))
+
 @app.route('/group/<int:post_id>/members', methods=['GET', 'POST'])
 def group_members(post_id):
     if 'user_id' not in session:
