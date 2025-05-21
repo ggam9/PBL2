@@ -135,7 +135,7 @@
         <h2>메뉴</h2>
         <ul>
             <li>
-                <a href="#" onclick="checkTasks({{ post.id }}); return false;" class="tablink">✅ 해야 할 일</a>
+                <a href="{{ url_for('group_alert', post_id=post.id) }}" class="tablink">✅ 해야 할 일</a>
             </li>
             <li>
                 <a href="{{ url_for('group_announcement', post_id=post.id) }}" class="tablink">📢 공지</a>
@@ -155,7 +155,7 @@
             <li>
                 <a href="{{ url_for('group_calender', post_id=post.id) }}" class="tablink">📆 일정</a>
             </li>            
-            <button onclick="window.open('{{ url_for('studymode', post_id=post.id) }}', '_blank', width=700, height=600, top=50, left=50)">🖥️ 스터디 시작</button>        
+            <button onclick="location.href='{{ url_for('studymode', post_id=post.id) }}'">🖥️ 스터디 시작</button>
         </ul>
     </div>
 
@@ -168,33 +168,7 @@
         </div>
     </div>
 </div>
-<script>
-function checkTasks(postId) {
-    fetch(`/api/todo_status/${postId}`)
-        .then(response => {
-            if (!response.ok) throw new Error("네트워크 오류 발생");
-            return response.json();
-        })
-        .then(data => {
-            const quizCount = data.quiz_count;
-            const fileCount = data.file_count;
 
-            if (quizCount > 0 || fileCount > 0 || data.schedule_count > 0) {
-                let message = "📋 해야 할 일이 있습니다:\n";
-                if (quizCount > 0) message += `- 퀴즈: ${quizCount}개 풀기 \n`;
-                if (fileCount > 0) message += `- 봐야 할 자료: ${fileCount}개\n`;                
-                
-                alert(message);
-            } else {
-                alert("🎉 현재 할 일이 없습니다!");
-            }
-        })
-        .catch(error => {
-            console.error("할 일 확인 실패:", error);
-            alert("작업 정보를 불러오는 데 실패했습니다.");
-        });
-}
-</script>
 
 
 {% endblock %}
