@@ -1,0 +1,22 @@
+{% extends "group_page.html" %}
+
+{% block group_content %}
+ <h2>📋 해야 할 일이 있습니다!</h2>
+ <ul style="list-style: none; font-size: 1.2em; padding-left: 0;">
+    {% if quiz_count > 0 %}
+    <li>📝 퀴즈: {{ quiz_count }}개 풀기</li>
+    {% endif %}
+    {% if file_count > 0 %}
+    <li>📁 자료 보기: {{ file_count }}개</li>
+    {% endif %}
+    {% if schedule_count > 0 %}
+    <li>📆 일정 확인: {{ schedule_count }}개</li>
+    {% endif %}
+
+    {% if quiz_count == 0 and file_count == 0 and schedule_count == 0 %}
+    <li>🎉 현재 해야 할 일이 없습니다!</li>
+    {% endif %}
+ </ul>
+
+ 
+{% endblock %}
