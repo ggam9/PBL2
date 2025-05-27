@@ -1,7 +1,9 @@
 
 import { io } from 'https://cdn.socket.io/4.7.2/socket.io.esm.min.js';
 
-const socket = io('http://localhost:5000/videochat');
+const socket = io('http://localhost:5000/videochat', {
+  reconnection: false  // 자동 재연결 방지
+});
 const config = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
 
 let localStream;
@@ -43,18 +45,25 @@ const postId  = document.body.dataset.postid;
   //const userId = Math.random().toString(36).substr(2, 9); username을 user_id로 사용
   socket.emit('join', { user_id: username  });
   socket.emit('join_room', { room: `room-${postid}`, user_id: username });
+  socket.on('reload_others', ({ user_id }) => {
+    console.log(`User ${user_id} has ended the call. Reloading...`);
+    // 연결 해제 후 리로드
+    socket.disconnect();
+    window.location.reload();
+  });
 
   // 기존 참가자
   socket.on('all-users', ({ peers: list }) => {
     list.forEach(p => createPeer(p.sid, p.user_id, true));
   });
 
-  // 신규 참가자
-  socket.on('new-user', ({ sid }) => createPeer(sid, null, false));
+  // 신규 참가자 + user_id
+  socket.on('new-user', ({ sid, user_id  }) => createPeer(sid, user_id, false));
 
   // offer
   socket.on('offer', async ({ sdp, sender }) => {
-    const pc = createPeer(sender, null, false);
+    //const pc = createPeer(sender, null, false);
+    const pc = peers[sender] || createPeer(sender, null, false);
     await pc.setRemoteDescription(new RTCSessionDescription(sdp));
     const answer = await pc.createAnswer();
     await pc.setLocalDescription(answer);
@@ -71,11 +80,10 @@ const postId  = document.body.dataset.postid;
     await peers[sender].addIceCandidate(new RTCIceCandidate(candidate));
   });
 
-  // 사용자 연결 해제
   socket.on('user-disconnected', ({ sid }) => {
-    peers[sid]?.close();
-    delete peers[sid];
-    document.getElementById('video-' + sid)?.remove();
+   peers[sid]?.close();
+   delete peers[sid];
+   document.getElementById('video-container-' + sid)?.remove();
   });
 
   // 버튼 이벤트 핸들러 구현
@@ -105,11 +113,23 @@ const postId  = document.body.dataset.postid;
   });
 
   btnEnd.addEventListener('click', () => {
-    // 모든 피어 연결 종료
     Object.values(peers).forEach(pc => pc.close());
-    window.location.href = `/group/${postId}/studymode`;
-    //window.location.reload();
+    Object.keys(peers).forEach(key => delete peers[key]);
+
+   if (localStream) {
+    localStream.getTracks().forEach(track => track.stop());
+   }
+
+   socket.emit('force_reload', { room: `room-${postId}`, user_id: username });
+
+   // socket 연결 해제
+   socket.disconnect();
+
+   // 페이지 이동
+   window.location.href = `/group/${postId}/studymode`;
+    
   });
+
   
 
   btnChat.addEventListener('click', () => {
@@ -137,14 +157,25 @@ const postId  = document.body.dataset.postid;
   chatMessages.appendChild(messageElem);
   chatMessages.scrollTop = chatMessages.scrollHeight; // 자동 스크롤
   });
- 
+
+  
 
 })();
 
 // Peer 생성 함수
 function createPeer(sid, user_id, isInitiator) {
+  if (peers[sid]) return peers[sid];
   const pc = new RTCPeerConnection(config);
   peers[sid] = pc;
+  
+  pc.onconnectionstatechange = () => {
+  if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed' || pc.connectionState === 'closed') {
+    console.log(`Peer ${sid} disconnected`);
+    peers[sid]?.close();
+    delete peers[sid];
+    document.getElementById('video-container-' + sid)?.remove();
+   }
+  };
 
   localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
 
@@ -153,14 +184,29 @@ function createPeer(sid, user_id, isInitiator) {
   };
 
   pc.ontrack = e => {
-    let rv = document.getElementById('video-' + sid);
-    if (!rv) {
-      rv = document.createElement('video');
-      rv.id = 'video-' + sid;
-      rv.autoplay = true;
-      remoteContainer.append(rv);
+    let container = document.getElementById('video-container-' + sid);
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'video-container-' + sid;
+      container.style.textAlign = 'center';
+      container.style.margin = '5px';
+      
+      const video = document.createElement('video');
+      video.id = 'video-' + sid;
+      video.autoplay = true;
+      video.style.width = '200px';  // 크기 조정은 필요에 따라
+      container.appendChild(video);
+
+      const label = document.createElement('div');
+      label.textContent = user_id || '이름 없음';
+      label.style.fontSize = '14px';
+      label.style.marginTop = '4px';
+      container.appendChild(label);
+
+      remoteContainer.appendChild(container);
     }
-    rv.srcObject = e.streams[0];
+    const video = document.getElementById('video-' + sid);
+    video.srcObject = e.streams[0];
   };
 
   if (isInitiator) {
@@ -170,5 +216,6 @@ function createPeer(sid, user_id, isInitiator) {
         socket.emit('offer', { sdp: pc.localDescription, target_sid: sid });
       });
   }
+
   return pc;
 }
