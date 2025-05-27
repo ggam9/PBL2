@@ -31,12 +31,11 @@
         border-radius: 5px;
         cursor: pointer;
         margin-left: 5px;
-        background: #32c882;
-        color: #fff;
+        background: #00ff5e;
+        color: #000;
     }
     .sidebar button:hover {
-        background-color: #28a874;
-        transition: 0.2s;
+        background-color: #00be00;
     }
     .sidebar ul {
         list-style: none;
@@ -52,10 +51,6 @@
     }
     .sidebar ul li:hover {
         background: #c9f9b0;
-        transition: 0.2s;
-    }
-    .sidebar ul li a:visited {
-        color: black;
     }
     .main {
         flex: 1;
@@ -82,12 +77,11 @@
         border-radius: 5px;
         cursor: pointer;
         margin-left: 5px;
-        background: #32c882;
-        color: #fff;
+        background: #00ff5e;
+        color: #000;
     }
     .buttons button:hover {
-        background: #28a874;
-        transition: 0.2s;
+        background: #00be00;
     }
     .content {
         flex: 1;
@@ -153,7 +147,7 @@
                 <a href="{{ url_for('group_share', post_id=post.id) }}" class="tablink">📁 자료 공유
             </li>
             <li>
-                <a href="{{ url_for('group_members', post_id=post.id) }}" class="tablink">👤맴버</a>
+                <a href="{{ url_for('group_members', post_id=post.id) }}" class="tablink">맴버</a>
             </li>
             <li>      
             <a href="{{ url_for('group_quiz', post_id=post.id) }}" class="tablink">📖 문제풀이</a>
@@ -161,7 +155,7 @@
             <li>
                 <a href="{{ url_for('group_calender', post_id=post.id) }}" class="tablink">📆 일정</a>
             </li>            
-            <button onclick="window.open('{{ url_for('studymode', post_id=post.id) }}', '_blank', width=700, height=600, top=50, left=50)">🖥️ 스터디 시작</button> 
+            <button onclick="location.href='{{ url_for('studymode', post_id=post.id) }}'">🖥️ 스터디 시작</button>
         </ul>
     </div>
 

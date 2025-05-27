@@ -7,7 +7,7 @@
 .group_content h2 {
     margin-bottom: 20px;
     font-size: 1.8em;
-    color: #000;
+    color: #155724;
 }
 
 .upload-form {
@@ -32,7 +32,7 @@
     display: block;
     margin-bottom: 5px;
     font-weight: bold;
-    color: #000;
+    color: #155724;
 }
 
 .upload-form .form-control {
@@ -67,12 +67,12 @@
 }
 
 .btn-primary {
-    background-color: #32c882;
+    background-color: #28a745;
     color: white;
 }
 
 .btn-primary:hover {
-    background-color: #28a874;
+    background-color: #218838;
 }
 
 .btn-danger {
@@ -114,7 +114,7 @@
 .file-item span {
     flex-grow: 1;
     font-weight: 500;
-    color: #000;
+    color: #155724;
     word-break: break-all;
 }
 
@@ -131,19 +131,19 @@
 .custom-file-upload {
     display: inline-block;
     padding: 10px 20px;
-    background-color: #32c882;
+    background-color: #28a745;
     color: white;
     border-radius: 8px;
     font-weight: bold;
     font-size: 0.95em;
     cursor: pointer;
-    transition: background-color 0.2s ease;
+    transition: background-color 0.3s ease;
     text-align: center;
     border: none;
 }
 
 .custom-file-upload:hover {
-    background-color: #28a874;
+    background-color: #218838;
 }
 .file-upload-wrapper {
     display: flex;
@@ -162,31 +162,28 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
-.file-upload-wrapper label{
-    color: #fff;
-}
 </style>
 
 <h2>{{ post.title }} 📁 자료 공유</h2>
 
 <form method="POST" enctype="multipart/form-data" class="upload-form">
     <div class="form-group">
-        <label for="file">📎 파일 업로드</label>
+        <label for="file">📎 Upload File</label>
         <div class="file-upload-wrapper">
-         <label for="file" class="custom-file-upload">파일</label>
+         <label for="file" class="custom-file-upload">Choose File</label>
          <span id="file-name" class="file-name">No file selected</span>
         </div>
      <input type="file" id="file" name="file" class="form-control file-input" required>
     </div>
     <div class="form-group">
-        <label for="subdirectory">📁 파일유형</label>
+        <label for="subdirectory">📁 Choose Directory</label>
         <select id="subdirectory" name="subdirectory" class="form-control">
             <option value="documents">Documents</option>
             <option value="images">Images</option>
             <option value="videos">Videos</option>
         </select>
     </div>
-    <button type="submit" class="btn btn-primary">업로드</button>
+    <button type="submit" class="btn btn-primary">Upload</button>
     {% with messages = get_flashed_messages(category_filter=['upload_error']) %}
         {% if messages %}
             <span style="color: red; margin-top: 10px;">{{ messages[0] }}</span>
@@ -199,16 +196,16 @@
         document.getElementById('file-name').textContent = fileName;
     });
 </script>
-<h3 style="color:#000;">파일</h3>
+<h3 style="color:#155724;">Available Files and Directories</h3>
 <ul class="file-list">
     {% for item in dirs_and_files %}
     <li class="file-item">
         <span>{{ item }}</span>
         {% if not item.endswith('/') %}
         <div class="file-actions">
-            <a href="{{ url_for('download_file', post_id=post.id, filename=item) }}" class="btn-link">다운로드</a>
+            <a href="{{ url_for('download_file', post_id=post.id, filename=item) }}" class="btn-link">Download</a>
             <form method="POST" action="{{ url_for('delete_file', post_id=post.id, filename=item) }}" style="display:inline;">
-                <button type="submit" class="btn btn-danger">삭제</button>
+                <button type="submit" class="btn btn-danger">Delete</button>
             </form>
         </div>
         {% endif %}
