@@ -1,5 +1,7 @@
-let socket = io("/groupchat");
+const socket = io("/groupchat");
 let currentPrivateTarget = null;
+
+// -------------------- 연결 및 종료 처리 --------------------
 
 socket.on('connect', () => {
     socket.emit('join_room', {
@@ -9,9 +11,14 @@ socket.on('connect', () => {
     });
 });
 
+window.addEventListener('beforeunload', () => {
+    socket.emit('leave_room', {
+        room: `post_${postId}`,
+        username: currentUsername
+    });
+});
 
 // -------------------- 그룹 채팅 --------------------
-
 
 function sendGroupMessage() {
     const input = document.getElementById('groupMsg');
@@ -20,8 +27,7 @@ function sendGroupMessage() {
 
     socket.emit('group_message', {
         room: `post_${postId}`,
-    msg: msg,
-    
+        msg: msg
     });
 
     input.value = '';
@@ -35,30 +41,30 @@ socket.on('group_message', data => {
     chatBox.scrollTop = chatBox.scrollHeight;
 });
 
-
 // -------------------- 1:1 채팅 --------------------
-// 사용자 클릭 시 1:1 채팅 열기
+
 function openPrivateChat(targetUsername) {
+    if (currentPrivateTarget === targetUsername) return; // 이미 열려있으면 무시
+
     currentPrivateTarget = targetUsername;
     document.getElementById("private-chat-title").innerText = `1:1 채팅 - ${targetUsername}`;
     document.getElementById("privateChatBox").innerHTML = '';
     document.getElementById("private-chat-panel").style.display = 'block';
-    
+
     socket.emit("load_private_chat", {
         from: currentUsername,
         to: targetUsername
     });
 }
 
-// 닫기 버튼
 function closePrivateChat() {
     currentPrivateTarget = null;
     document.getElementById("private-chat-panel").style.display = 'none';
 }
 
-// 메시지 보내기
 function sendPrivateMessage() {
-    const message = document.getElementById("privateMsg").value;
+    const input = document.getElementById("privateMsg");
+    const message = input.value.trim();
     if (!currentPrivateTarget || !message) return;
 
     socket.emit("private_message", {
@@ -66,10 +72,9 @@ function sendPrivateMessage() {
         to: currentPrivateTarget,
         message: message
     });
-    document.getElementById("privateMsg").value = '';
+    input.value = '';
 }
 
-// 수신
 socket.on("private_message", ({ from, message }) => {
     const box = document.getElementById("privateChatBox");
     box.innerHTML += `<div><strong>${from}</strong>: ${linkify(message)}</div>`;
@@ -84,23 +89,28 @@ socket.on("load_private_chat", ({ messages }) => {
     });
     box.scrollTop = box.scrollHeight;
 });
-//기타----------------------------------------------------------------
-function linkify(text) {
-    const urlPattern = /(https?:\/\/[^\s]+)/g;
-    return text.replace(urlPattern, url => {
-        return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
-    });
-}
+
+// -------------------- 접속자 목록 --------------------
+
 socket.on('update_active_users', function(usernames) {
     const userList = document.getElementById('activeUsers');
     userList.innerHTML = '';
-    
+
     usernames.forEach(username => {
         const li = document.createElement('li');
         li.innerHTML = `<span class="online-dot"></span> ${username}`;
         userList.appendChild(li);
     });
 });
+
+// -------------------- 공통 기능 --------------------
+
+function linkify(text) {
+    const urlPattern = /(https?:\/\/[^\s]+)/g;
+    return text.replace(urlPattern, url => {
+        return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+    });
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     const groupInput = document.getElementById('groupMsg');
