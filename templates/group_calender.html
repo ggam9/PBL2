@@ -1,0 +1,112 @@
+{% extends "group_page.html" %}
+
+{% block title %}일정{% endblock %}
+
+{% block group_content %}
+<style>
+    .group_content h2 {
+    margin-bottom: 20px;
+}
+
+.btn {
+    margin: 5px 0;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.btn-primary {
+    background-color: #32c882;
+    color: white;
+}
+.btn-primary:hover{
+    background-color: #28a874;
+    transition: 0.2s;
+}
+
+.btn-success {
+    background-color: #28a874;
+    color: white;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+.form-popup {
+    background-color: white;
+    border: 1px solid #ccc;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+}
+
+#calendar {
+    margin-top: 20px;
+    background-color: #ffffff;
+    border-radius: 5px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+}
+
+</style>
+<h2>{{ post.title }}의 일정</h2>
+<button class="btn btn-primary" onclick="toggleScheduleForm()">일정 만들기</button>
+<div id="scheduleForm" class="form-popup" style="display:none;">
+    <h4>새 일정 만들기</h4>
+    <form method="POST">
+        <div class="form-group">
+            <label for="title">제목</label>
+            <input type="text" id="title" name="title" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="description">내용</label>
+            <textarea id="description" name="description" class="form-control" rows="3" required></textarea>
+        </div>
+        <div class="form-group">
+            <label for="date">시간</label>
+            <input type="datetime-local" id="date" name="date" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-success">만들기</button>
+        <button type="button" class="btn btn-secondary" onclick="toggleScheduleForm()">Cancel</button>
+    </form>
+</div>
+
+<div id="calendar"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.css" rel="stylesheet" />
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var calendarEl = document.getElementById('calendar');
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        events: [
+            {% for schedule in schedules %}
+            {
+                title: '{{ schedule.title }}',
+                start: '{{ schedule.date.isoformat() }}',
+                description: '{{ schedule.description }}'
+            },
+            {% endfor %}
+        ],
+        eventClick: function(info) {
+            alert('Title: ' + info.event.title + '\nDescription: ' + info.event.extendedProps.description);
+        }
+    });
+    calendar.render();
+});
+
+function toggleScheduleForm() {
+    var form = document.getElementById('scheduleForm');
+    form.style.display = form.style.display === 'none' ? 'block' : 'none';
+}
+</script>
+{% endblock %}

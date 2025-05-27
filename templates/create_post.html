@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block title %}그룹 만들기{% endblock %}
+
+{% block content %}
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .topbar {
+            background: #fff;
+            padding: 0 200px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            height: 60px;
+            border-bottom: 1px solid #ccc;
+        }
+        .topbar a {
+            font-size: 22px;
+            font-weight: bold;
+            color: #000;
+            text-decoration: none;
+        }
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .topbar-left h2 {
+            margin-right: 20px;
+        }
+
+        .topbar-left button {
+            padding: 20px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background: #fff;
+            color: rgb(0, 0, 0);
+        }
+        .topbar-left button:hover {
+            background-color: #ebffe5;
+        }
+
+        .top-buttons {
+            display: flex;
+            align-items: center;
+        }
+
+        .top-buttons .username {
+            margin: 0 10px;
+            font-weight: bold;
+        }
+
+        .top-buttons button {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 5px;
+            background: #32c882;
+            color: rgb(255, 255, 255);
+        }
+
+        .container {
+            flex: 1;
+            padding: 20px 200px;
+            background: #fff;
+        }
+
+        .form-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-container h2 {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .form-container label {
+            font-weight: bold;
+        }
+
+        .form-container input,
+        .form-container textarea,
+        .form-container select{
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #fff;
+        }
+
+        .form-container button[type="submit"] {
+            padding: 10px 20px;
+            background-color: #32c882;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .form-container button[type="submit"]:hover {
+            background-color: #28a874;
+            transition: 0.2s;
+        }
+
+        .alert {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            color: white;
+            text-align: center;
+        }
+
+        .alert-success {
+            background-color: #28a745;
+        }
+
+        .alert-danger {
+            background-color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="form-container">
+            <h2>그룹 만들기</h2>
+            <form method="POST">
+                <div class="form-group">
+                    <label for="title">그룹명</label>
+                    <input type="text" id="title" name="title" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="topic">주제</label>
+                    <select id="topic" name="topic" class="form-control" required>
+                        <option value="프로그래밍">프로그래밍</option>
+                        <option value="공무원">공무원</option>
+                        <option value="중고등학교">중고등학교</option>
+                        <option value="대학교">대학교</option>
+                        <option value="자격증">자격증</option>
+                        <option value="기타">기타</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="content">소개글</label>
+                    <textarea id="content" name="content" class="form-control" rows="5" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="max_participants">최대인원</label>
+                    <select id="max_participants" name="max_participants" class="form-control" required>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">만들기</button>
+            </form>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                {% for category, message in messages %}
+                  <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+              {% endif %}
+            {% endwith %}
+        </div>
+    </div>
+</body>
+</html>
+{% endblock %}

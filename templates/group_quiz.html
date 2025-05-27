@@ -1,0 +1,131 @@
+{% extends "group_page.html" %}
+
+{% block title %}그룹 퀴즈{% endblock %}
+
+{% block group_content %}
+<style>
+    .group_content h2 {
+    margin-bottom: 20px;
+}
+
+.btn {
+    margin: 5px 0;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.btn-primary {
+    background-color: #32c882;
+    color: white;
+}
+.btn-primary:hover{
+    background-color: #28a874;
+    transition: 0.2s;
+}
+
+.btn-success {
+    background-color: #28a745;
+    color: white;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    color: white;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+.btn-link {
+    color: #007bff;
+    text-decoration: none;
+    margin-left: 10px;
+}
+
+.btn-link:hover {
+    text-decoration: underline;
+}
+
+.form-popup {
+    background-color: white;
+    border: 1px solid #ccc;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+}
+
+.quiz-list {
+    list-style: none;
+    padding: 0;
+}
+
+.quiz-item {
+    border: 1px solid #ddd;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    background-color: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+</style>
+<h2>퀴즈 관리</h2>
+<button class="btn btn-primary" onclick="toggleQuizForm()">새 퀴즈 만들기</button>
+<div id="quizForm" class="form-popup" style="display:none;">
+    <h3>새 퀴즈 만들기</h3>
+    <form method="POST" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="question">문제</label>
+            <input type="text" id="question" name="question" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="image">이미지 업로드</label>
+            <input type="file" id="image" name="image" class="form-control">
+        </div>
+        <div class="form-group">
+            <label for="difficulty">난이도</label>
+            <select id="difficulty" name="difficulty" class="form-control" required>
+                <option value="easy">하</option>
+                <option value="medium">중중</option>
+                <option value="hard">상</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="answer">답</label>
+            <input type="text" id="answer" name="answer" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-success">만들기</button>
+        <button type="button" class="btn btn-secondary" onclick="toggleQuizForm()">Cancel</button>
+    </form>
+</div>
+
+<h3>현재 퀴즈</h3>
+<ul class="quiz-list">
+    {% for quiz in quizzes %}
+    <li class="quiz-item">
+        <span><strong>{{ quiz.question }}</strong> - {{ quiz.difficulty }}</span>
+        <a href="{{ url_for('take_quiz', post_id=post.id, quiz_id=quiz.id) }}" class="btn btn-link">Take Quiz</a>
+        <form method="POST" action="{{ url_for('delete_quiz', post_id=post.id, quiz_id=quiz.id) }}" style="display:inline;">
+            <button type="submit" class="btn btn-danger">Delete</button>
+        </form>
+    </li>
+    {% endfor %}
+</ul>
+
+<script>
+function toggleQuizForm() {
+    var form = document.getElementById('quizForm');
+    form.style.display = form.style.display === 'none' ? 'block' : 'none';
+}
+</script>
+{% endblock %}
