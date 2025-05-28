@@ -191,31 +191,22 @@
     </div>
   </div>
 
-  <script>
-    function filterGroups() {
-      var keyword = document.getElementById('search-keyword').value.toLowerCase();
-      var topic = document.getElementById('topic-filter').value.toLowerCase();
-      var rows = document.querySelectorAll('#group-list tr');
-      rows.forEach(function(row) {
-        var title = row.querySelector('td:nth-child(2) span').innerText.toLowerCase();
-        var rowTopic = row.querySelector('td:nth-child(3)').innerText.toLowerCase();
-        if ((title.includes(keyword) || keyword === '') && (rowTopic.includes(topic) || topic === '')) {
-          row.style.display = '';
-        } else {
-          row.style.display = 'none';
-        }
-      });
-    }
-
-    function toggleDetails(postId) {
-      var detailsDiv = document.getElementById('details-' + postId);
-      if (detailsDiv.style.display === 'none') {
-        detailsDiv.style.display = 'block';
+<script>
+  function filterGroups() {
+    var keyword = document.getElementById('search-keyword').value.toLowerCase();
+    var topic = document.getElementById('topic-filter').value.toLowerCase();
+    var rows = document.querySelectorAll('#group-list tr');
+    rows.forEach(function(row) {
+      var title = row.querySelector('td:nth-child(1) span').innerText.toLowerCase(); // 첫 번째 칸이 그룹명
+      var rowTopic = row.querySelector('td:nth-child(2)').innerText.toLowerCase(); // 두 번째 칸이 주제
+      if ((title.includes(keyword) || keyword === '') && (rowTopic.includes(topic) || topic === '')) {
+        row.style.display = '';
       } else {
-        detailsDiv.style.display = 'none';
+        row.style.display = 'none';
       }
-    }
-  </script>
+    });
+  }
+</script>
 </body>
 </html>
 {% endblock %}
