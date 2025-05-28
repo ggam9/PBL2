@@ -3,28 +3,47 @@
 {% block group_content %}
  <h2>📋 해야 할 일이 있습니다!</h2>
  <ul style="list-style: none; font-size: 1.2em; padding-left: 0;">
-    {% if quiz_count > 0 %}
-    <li>📝 퀴즈: {{ quiz_count }}개 풀기</li>
+   {% if quiz_count > 0 %}
+    <h3>📝 퀴즈 풀기</h3>
+    <ul class="quiz-list">
+      {% for quiz in quizzes %}
+       <li class="quiz-item">
+        <strong>문제:</strong> {{ quiz.question }}<br>        
+         <a href="{{ url_for('take_quiz', post_id=post.id, quiz_id=quiz.id) }}" class="tablink">
+           <button style="margin-top: 5px; padding: 8px 12px; font-size: 1em; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;">
+             퀴즈 풀기 →
+           </button>
+         </a>
+       </li>
+      {% endfor %}
+    </ul>
+   {% endif %}
+
+   {% if file_count > 0 %}
+    <li>📁 자료 보기: {{ file_count }}개</li>
     <li>
-        <a href="{{ url_for('group_quiz', post_id=post.id) }}" class="tablink">
-            <button style="margin-top: 5px; padding: 8px 12px; font-size: 1em; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;">
-                퀴즈 풀러 가기 →
+        <a href="{{ url_for('group_share', post_id=post.id) }}" class="tablink">
+            <button style="margin-top: 5px; padding: 8px 12px; font-size: 1em; background-color: #2196F3; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                자료 보러 가기 →
             </button>
         </a>
     </li>
-    {% endif %}
-  
-    {% if file_count > 0 %}
-    <li>📁 자료 보기: {{ file_count }}개</li>
-    {% endif %}
-  
-    {% if schedule_count > 0 %}
-    <li>📆 일정 확인: {{ schedule_count }}개</li>
-    {% endif %}
+   {% endif %}
 
-    {% if quiz_count == 0 and file_count == 0 and schedule_count == 0 %}
+   {% if schedule_count > 0 %}
+    <li>📆 일정 확인: {{ schedule_count }}개</li>
+    <li>
+        <a href="{{ url_for('group_calender', post_id=post.id) }}" class="tablink">
+            <button style="margin-top: 5px; padding: 8px 12px; font-size: 1em; background-color: #FF9800; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                일정 확인하러 가기 →
+            </button>
+        </a>
+    </li>
+   {% endif %}
+
+   {% if quiz_count == 0 and file_count == 0 and schedule_count == 0 %}
     <li>🎉 현재 해야 할 일이 없습니다!</li>
-    {% endif %}
+   {% endif %}
  </ul>
 
  
