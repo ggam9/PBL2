@@ -210,6 +210,7 @@ def update_study_time():
         return redirect(url_for('login'))
     
     user = db.session.get(User, session['user_id'])
+    global total_goal_hours, today_goal_hours, weekly_goal_hours
 
     if request.method == 'POST':
         # 폼에서 입력받은 시간을 초로 변환하여 저장
@@ -224,11 +225,20 @@ def update_study_time():
         user.today_study_time = today_hours * 3600 + today_minutes * 60
         user.weekly_study_time = weekly_hours * 3600 + weekly_minutes * 60
 
+        # 목표 시간 업데이트
+        total_goal_hours = int(request.form.get('total_goal_hours', total_goal_hours))
+        today_goal_hours = int(request.form.get('today_goal_hours', today_goal_hours))
+        weekly_goal_hours = int(request.form.get('weekly_goal_hours', weekly_goal_hours))
+
         db.session.commit()
-        flash('Study times updated successfully!', 'success')
+        flash('Study times and goals updated successfully!', 'success')
         return redirect(url_for('my_page'))
 
-    return render_template('update_study_time.html', user=user)
+    return render_template('update_study_time.html', user=user, 
+                           total_goal_hours=total_goal_hours, 
+                           today_goal_hours=today_goal_hours, 
+                           weekly_goal_hours=weekly_goal_hours)
+
 
 #-----------------------
 
