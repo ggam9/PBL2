@@ -1,5 +1,5 @@
 from flask_socketio import SocketIO, emit, join_room, leave_room
-from flask import Flask, render_template, request, redirect, url_for, flash, session,jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, session,jsonify, g
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField
@@ -176,7 +176,19 @@ class PrivateMessage(db.Model):
         return f"PrivateMessage('{self.from_user}', '{self.to_user}', '{self.message}')"
 
 
+#모든 페이지에서 실행
+#로그인 유저 상태표시
+@app.before_request
+def load_user_status():
+    if 'user_id' in session:
+        user = db.session.get(User, session['user_id'])
+        g.user_status = user.status if user else 'offline'
+    else:
+        g.user_status = 'offline'
 
+@app.context_processor
+def inject_user_status():
+    return dict(user_status=g.get('user_status', 'offline'))
 
 
 # 라우트 정의
@@ -194,8 +206,34 @@ def beginer():
         flash('Please log in to access this page.', 'warning')
         return redirect(url_for('login'))
     
-    user_status = session.get('user_status', 'offline')
-    return render_template('beginer.html', user_status=user_status)
+    user = db.session.get(User, session['user_id'])
+
+    # 목표 시간 설정 (가정)
+    total_goal_hours = 200  # 총 목표 시간
+    today_goal_hours = 3  # 오늘 목표 시간
+    weekly_goal_hours = 20  # 이번 주 목표 시간
+
+    # 목표 시간 계산
+    total_goal_seconds = total_goal_hours * 3600
+    today_goal_seconds = today_goal_hours * 3600
+    weekly_goal_seconds = weekly_goal_hours * 3600
+
+    # 진행률 계산
+    total_progress = (user.total_study_time / total_goal_seconds) * 100 if total_goal_seconds > 0 else 0
+    today_progress = (user.today_study_time / today_goal_seconds) * 100 if today_goal_seconds > 0 else 0
+    weekly_progress = (user.weekly_study_time / weekly_goal_seconds) * 100 if weekly_goal_seconds > 0 else 0
+
+    return render_template('beginer.html',
+                           total_study_time=user.total_study_time,
+                           today_study_time=user.today_study_time,
+                           weekly_study_time=user.weekly_study_time,
+                           total_goal_hours=total_goal_hours,
+                           today_goal_hours=today_goal_hours,
+                           weekly_goal_hours=weekly_goal_hours,
+                           total_progress=total_progress,
+                           today_progress=today_progress,
+                           weekly_progress=weekly_progress)
+
 @socketio.on('chat_message')
 def handle_chat_message(data):
     emit('chat_message', data, broadcast=True)
@@ -268,7 +306,22 @@ def logout():
     flash('로그아웃 되었습니다.', 'info')
     return redirect(url_for('login'))
     
+@app.route('/update_status', methods=['POST'])
+def update_status():
+    if 'user_id' not in session:
+        return jsonify({"status": "error", "message": "로그인이 필요합니다."}), 401
 
+    user = db.session.get(User, session['user_id'])
+    data = request.get_json()
+    new_status = data.get('status')
+
+    if user and new_status:
+        user.status = new_status
+        user.last_status_change = datetime.utcnow()
+        db.session.commit()
+        return jsonify({"status": "success", "message": "상태가 업데이트되었습니다."})
+
+    return jsonify({"status": "error", "message": "상태 업데이트에 실패했습니다."}), 400
 
 @app.route('/create_post', methods=['GET', 'POST'])
 def create_post():
@@ -584,7 +637,7 @@ def group_members(post_id):
     # 현재 사용자가 대표인지 확인
     current_role = next((pu.role for pu in post_users if pu.user_id == current_user.id), 'member')
     
-    # POST 요청 처리 (대표/관리자 임명 및 제명)
+    # POST 요청 처리 (대표/관리자 임명 및 제명, 자기 자신 탈퇴)
     if request.method == 'POST':
         action = request.form.get('action')
         target_user_id = int(request.form.get('user_id'))
@@ -601,7 +654,7 @@ def group_members(post_id):
                     target_post_user.role = 'admin'
                 elif request.form.get('role') == 'member':
                     target_post_user.role = 'member'
-        elif action == 'remove' and current_role in ['leader', 'admin']:
+        elif action == 'remove' and (current_role in ['leader', 'admin'] or target_user_id == current_user.id):
             if target_post_user:
                 db.session.delete(target_post_user)
         
@@ -610,7 +663,7 @@ def group_members(post_id):
     
     user_statuses = {pu.user_id: pu.user.status for pu in post_users}
 
-    return render_template('group_members.html', post=post, post_users=post_users, current_role=current_role, user_statuses=user_statuses)
+    return render_template('group_members.html', post=post, post_users=post_users, current_role=current_role, current_user=current_user, user_statuses=user_statuses)
 
 @app.route('/group/<int:post_id>/quiz', methods=['GET', 'POST'])
 def group_quiz(post_id):
@@ -812,12 +865,30 @@ def my_page():
     user = db.session.get(User, session['user_id'])
     joined_posts = user.joined_posts
 
-    total_seconds = user.total_study_time
-    hours, remainder = divmod(total_seconds, 3600)
-    minutes, seconds = divmod(remainder, 60)
-    formatted_study_time = f"{int(hours)}시간 {int(minutes)}분 {int(seconds)}초"
+    # 목표 시간 (더미)
+    total_goal_hours = 200  # 총 목표 시간
+    today_goal_hours = 3  # 오늘 목표 시간
+    weekly_goal_hours = 20  # 이번 주 목표 시간
 
-    return render_template('my_page.html', joined_posts=joined_posts, formatted_study_time=formatted_study_time)
+    total_goal_seconds = total_goal_hours * 3600
+    today_goal_seconds = today_goal_hours * 3600
+    weekly_goal_seconds = weekly_goal_hours * 3600
+
+    # 진행률 계산
+    total_progress = (user.total_study_time / total_goal_seconds) * 100 if total_goal_seconds > 0 else 0
+    today_progress = (user.today_study_time / today_goal_seconds) * 100 if today_goal_seconds > 0 else 0
+    weekly_progress = (user.weekly_study_time / weekly_goal_seconds) * 100 if weekly_goal_seconds > 0 else 0
+
+    return render_template('my_page.html', joined_posts=joined_posts,
+                           total_study_time=user.total_study_time,
+                           today_study_time=user.today_study_time,
+                           weekly_study_time=user.weekly_study_time,
+                           total_goal_hours=total_goal_hours,
+                           today_goal_hours=today_goal_hours,
+                           weekly_goal_hours=weekly_goal_hours,
+                           total_progress=total_progress,
+                           today_progress=today_progress,
+                           weekly_progress=weekly_progress)
 
 #프로필 업데이트
 @app.route('/update_profile', methods=['GET', 'POST'])
