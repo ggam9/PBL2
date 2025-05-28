@@ -32,8 +32,11 @@ def allowed_file(filename, subdirectory):
     ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
     return subdirectory in ALLOWED_EXTENSIONS_BY_TYPE and ext in ALLOWED_EXTENSIONS_BY_TYPE[subdirectory]
 
-def upload_file(file, directory_path, subdirectory):
-    if file and allowed_file(file.filename, subdirectory):
+def upload_file(file, directory_path, subdirectory=None):
+    if file:
+        if subdirectory:
+            if not allowed_file(file.filename, subdirectory):
+                return None
         filename = secure_filename(file.filename)
         file_path = os.path.join(directory_path, filename)
         file.save(file_path)
@@ -1076,6 +1079,7 @@ def group_alert(post_id):
     post = Post.query.get_or_404(post_id)  # post 객체 불러오기
 
     quiz_count = Quiz.query.filter_by(post_id=post_id).count()
+    quizzes = Quiz.query.filter_by(post_id=post_id).all()  # 퀴즈 리스트 추가
 
     group_folder = os.path.join(app.config['UPLOAD_FOLDER'], str(post_id))
     file_count = 0
@@ -1092,6 +1096,7 @@ def group_alert(post_id):
                            post=post,
                            post_id=post_id,
                            quiz_count=quiz_count,
+                           quizzes=quizzes,  # 퀴즈 리스트 넘김
                            file_count=file_count,
                            schedule_count=schedule_count)
 # 애플리케이션 실행
