@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}스터디 시간 수정{% endblock %}
+{% block title %}스터디 시간 및 목표 수정{% endblock %}
 
 {% block content %}
 <style>
@@ -47,7 +47,7 @@
 </style>
 <body>
     <form method="POST">
-        <h2 class="h2">스터디 시간 수정</h2>
+        <h2 class="h2">스터디 시간 및 목표 수정</h2>
         <div class="form-group">
             <label for="total_hours">총 공부 시간 (시간)</label>
             <input type="number" id="total_hours" name="total_hours" value="{{ user.total_study_time // 3600 }}" min="0">
@@ -71,6 +71,18 @@
         <div class="form-group">
             <label for="weekly_minutes">주간 공부 시간 (분)</label>
             <input type="number" id="weekly_minutes" name="weekly_minutes" value="{{ (user.weekly_study_time % 3600) // 60 }}" min="0">
+        </div>
+        <div class="form-group">
+            <label for="total_goal_hours">총 목표 시간 (시간)</label>
+            <input type="number" id="total_goal_hours" name="total_goal_hours" value={{ total_goal_hours }} min="0">
+        </div>
+        <div class="form-group">
+            <label for="today_goal_hours">오늘 목표 시간 (시간)</label>
+            <input type="number" id="today_goal_hours" name="today_goal_hours" value={{ today_goal_hours }} min="0">
+        </div>
+        <div class="form-group">
+            <label for="weekly_goal_hours">주간 목표 시간 (시간)</label>
+            <input type="number" id="weekly_goal_hours" name="weekly_goal_hours" value={{ weekly_goal_hours }} min="0">
         </div>
         <button type="submit" class="btn">수정</button>
     </form>
