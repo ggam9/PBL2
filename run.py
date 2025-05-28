@@ -60,6 +60,11 @@ active_users = {
     }
 }
 
+# 목표 시간 (더미)
+total_goal_hours = 200  # 총 목표 시간
+today_goal_hours = 3  # 오늘 목표 시간
+weekly_goal_hours = 20  # 이번 주 목표 시간
+
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(255), nullable=False, unique=True)
@@ -77,7 +82,8 @@ class User(db.Model):
 
     def __repr__(self):
         return f"User('{self.username}', '{self.email}', '{self.status}')"
-    
+
+
 # 회원가입 폼 정의
 class SignupForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email(message='Invalid email address'), Length(max=120)])
@@ -207,11 +213,6 @@ def beginer():
         return redirect(url_for('login'))
     
     user = db.session.get(User, session['user_id'])
-
-    # 목표 시간 설정 (가정)
-    total_goal_hours = 200  # 총 목표 시간
-    today_goal_hours = 3  # 오늘 목표 시간
-    weekly_goal_hours = 20  # 이번 주 목표 시간
 
     # 목표 시간 계산
     total_goal_seconds = total_goal_hours * 3600
@@ -864,11 +865,6 @@ def my_page():
     
     user = db.session.get(User, session['user_id'])
     joined_posts = user.joined_posts
-
-    # 목표 시간 (더미)
-    total_goal_hours = 200  # 총 목표 시간
-    today_goal_hours = 3  # 오늘 목표 시간
-    weekly_goal_hours = 20  # 이번 주 목표 시간
 
     total_goal_seconds = total_goal_hours * 3600
     today_goal_seconds = today_goal_hours * 3600
