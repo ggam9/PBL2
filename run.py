@@ -55,8 +55,8 @@ db = SQLAlchemy(app)
 
 socketio = SocketIO(app, cors_allowed_origins="*")
 active_users = {
-    2: {  # 그룹 ID가 2인 경우
-        '다른 접속자가 없습니다': datetime.now(),
+    0: {  # 그룹 ID가 2인 경우
+        '자습방 운영중': datetime.now(),
     }
 }
 
