@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}스터디 시간 수정{% endblock %}
+
+{% block content %}
+<style>
+    form {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    .h2 {
+        padding-top: 15px;
+        text-align: center;
+    }
+    .form-group {
+        margin-bottom: 15px;
+        padding: 20px 4px;
+    }
+    .form-group label {
+        font-weight: bold;
+    }
+    input[type="number"] {
+        width: 100%;
+        padding: 10px;
+        box-sizing: border-box;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        margin-top: 5px;
+    }
+    .btn {
+        padding: 10px 20px;
+        color: white;
+        background-color: #32c882;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        width: 100%;
+    }
+    .btn:hover {
+        background-color: #28a874;
+        transition: 0.2s;
+    }
+</style>
+<body>
+    <form method="POST">
+        <h2 class="h2">스터디 시간 수정</h2>
+        <div class="form-group">
+            <label for="total_hours">총 공부 시간 (시간)</label>
+            <input type="number" id="total_hours" name="total_hours" value="{{ user.total_study_time // 3600 }}" min="0">
+        </div>
+        <div class="form-group">
+            <label for="total_minutes">총 공부 시간 (분)</label>
+            <input type="number" id="total_minutes" name="total_minutes" value="{{ (user.total_study_time % 3600) // 60 }}" min="0">
+        </div>
+        <div class="form-group">
+            <label for="today_hours">오늘 공부 시간 (시간)</label>
+            <input type="number" id="today_hours" name="today_hours" value="{{ user.today_study_time // 3600 }}" min="0">
+        </div>
+        <div class="form-group">
+            <label for="today_minutes">오늘 공부 시간 (분)</label>
+            <input type="number" id="today_minutes" name="today_minutes" value="{{ (user.today_study_time % 3600) // 60 }}" min="0">
+        </div>
+        <div class="form-group">
+            <label for="weekly_hours">주간 공부 시간 (시간)</label>
+            <input type="number" id="weekly_hours" name="weekly_hours" value="{{ user.weekly_study_time // 3600 }}" min="0">
+        </div>
+        <div class="form-group">
+            <label for="weekly_minutes">주간 공부 시간 (분)</label>
+            <input type="number" id="weekly_minutes" name="weekly_minutes" value="{{ (user.weekly_study_time % 3600) // 60 }}" min="0">
+        </div>
+        <button type="submit" class="btn">수정</button>
+    </form>
+</body>
+{% endblock %}
