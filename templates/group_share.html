@@ -4,147 +4,44 @@
 
 {% block group_content %}
 <style>
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    
+    color: #343a40;
+    margin: 0;
+    padding: 0;
+}
+
 .group_content h2 {
-    margin-bottom: 20px;
-    font-size: 1.8em;
-    color: #155724;
+    font-size: 2em;
+    font-weight: 700;
+    margin-bottom: 25px;
+    color: #2c3e50;
+    text-align: center;
 }
 
 .upload-form {
-    margin-bottom: 30px;
-    padding: 20px;
-    background-color: #f9f9f9;
-    border-radius: 10px;
-    border: 1px solid #c3e6cb;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    background: #ffffff;
+    padding: 25px 30px;
+    border-radius: 15px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    margin-bottom: 40px;
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .upload-form .form-group {
-    width: 100%;
-    max-width: 400px;
-    margin-bottom: 15px;
+    margin-bottom: 20px;
 }
 
 .upload-form label {
+    font-weight: 600;
+    margin-bottom: 6px;
     display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-    color: #155724;
+    color: #34495e;
 }
 
-.upload-form .form-control {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ced4da;
-    border-radius: 8px;
-}
-
-.upload-form button {
-    max-width: 200px;
-    width: 100%;
-    margin-top: 10px;
-}
-
-.form-control {
-    width: 100%;
-    padding: 10px;
-    margin-top: 5px;
-    margin-bottom: 15px;
-    border: 1px solid #ced4da;
-    border-radius: 8px;
-}
-
-.btn {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: bold;
-    font-size: 0.95em;
-}
-
-.btn-primary {
-    background-color: #28a745;
-    color: white;
-}
-
-.btn-primary:hover {
-    background-color: #218838;
-}
-
-.btn-danger {
-    background-color: #dc3545;
-    color: white;
-}
-
-.btn-danger:hover {
-    background-color: #c82333;
-}
-
-.btn-link {
-    color: #007bff;
-    background: none;
-    border: none;
-    padding: 0;
-    font-size: 0.95em;
-    text-decoration: underline;
-    margin-right: 10px;
-}
-
-.file-list {
-    list-style: none;
-    padding: 0;
-}
-
-.file-item {
-    border: 1px solid #c3e6cb;
-    padding: 15px 20px;
-    margin-bottom: 15px;
-    border-radius: 10px;
-    background-color: #ffffff;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.file-item span {
-    flex-grow: 1;
-    font-weight: 500;
-    color: #155724;
-    word-break: break-all;
-}
-
-.file-actions {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.file-input {
-    display: none;  /* 실제 input 숨기기 */
-}
-
-.custom-file-upload {
-    display: inline-block;
-    padding: 10px 20px;
-    background-color: #28a745;
-    color: white;
-    border-radius: 8px;
-    font-weight: bold;
-    font-size: 0.95em;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-    text-align: center;
-    border: none;
-}
-
-.custom-file-upload:hover {
-    background-color: #218838;
-}
 .file-upload-wrapper {
     display: flex;
     align-items: center;
@@ -152,16 +49,120 @@
     flex-wrap: wrap;
 }
 
+.custom-file-upload {
+    background-color: #2ecc71;
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+.custom-file-upload:hover {
+    background-color: #27ae60;
+}
+
 .file-name {
+    color: #555;
     font-size: 0.95em;
-    color: #155724;
-    font-weight: 500;
-    word-break: break-word;
-    max-width: 250px;
+    max-width: 300px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+.form-control {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #ced4da;
+}
+
+.btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 0.95em;
+}
+
+.btn-primary {
+    background-color: #3498db;
+    color: white;
+    border: none;
+}
+
+.btn-primary:hover {
+    background-color: #2980b9;
+}
+
+.btn-danger {
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+}
+
+.btn-danger:hover {
+    background-color: #c0392b;
+}
+
+.btn-link {
+    color: #3498db;
+    text-decoration: underline;
+    background: none;
+    border: none;
+    font-size: 0.95em;
+}
+input[type="file"] {
+    display: none;
+}
+
+.file-list {
+    list-style: none;
+    padding: 0;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.file-item {
+    background: #ffffff;
+    border-left: 6px solid #2ecc71;
+    padding: 15px 25px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.file-item span {
+    font-weight: 600;
+    color: #2c3e50;
+    flex-grow: 1;
+}
+
+.file-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.ext-tag {
+    display: inline-block;
+    font-size: 0.75em;
+    font-weight: bold;
+    padding: 4px 8px;
+    border-radius: 10px;
+    margin-left: 10px;
+    color: white;
+    text-transform: uppercase;
+}
+
+.ext-img { background-color: #27ae60; }   /* green */
+.ext-video { background-color: #2980b9; } /* blue */
+.ext-doc { background-color: #c0392b; }   /* red */
+.ext-etc { background-color: #8e44ad; }   /* purple */
 </style>
 
 <h2>{{ post.title }} 📁 자료 공유</h2>
@@ -200,7 +201,18 @@
 <ul class="file-list">
     {% for item in dirs_and_files %}
     <li class="file-item">
-        <span>{{ item }}</span>
+      <span> {{ item }}
+     {% set ext = item.split('.')[-1].lower() %}
+     {% if ext in ['png', 'jpg', 'jpeg'] %}
+        <span class="ext-tag ext-img">{{ ext }}</span>
+     {% elif ext in ['mp4', 'avi'] %}
+        <span class="ext-tag ext-video">{{ ext }}</span>
+     {% elif ext in ['pdf', 'docx', 'txt'] %}
+        <span class="ext-tag ext-doc">{{ ext }}</span>
+     {% else %}
+        <span class="ext-tag ext-etc">{{ ext }}</span>
+     {% endif %}
+      </span>
         {% if not item.endswith('/') %}
         <div class="file-actions">
             <a href="{{ url_for('download_file', post_id=post.id, filename=item) }}" class="btn-link">Download</a>
