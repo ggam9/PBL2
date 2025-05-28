@@ -56,6 +56,8 @@
         <tr>
             <th>Username</th>
             <th>Role</th>
+            <th>Status</th>
+            <th>Study Time</th>
             <th>Action</th>
         </tr>
     </thead>
@@ -64,6 +66,8 @@
         <tr>
             <td>{{ pu.user.username }}</td>
             <td>{{ pu.role }}</td>
+            <td>{{ user_statuses[pu.user_id] }}</td>
+            <td>{{ pu.study_time // 3600 }}시간 {{ (pu.study_time % 3600) // 60 }}분</td>
             <td>
                 {% if current_role == 'leader' and pu.role != 'leader' %}
                     <form method="POST" style="display:inline;">
@@ -76,7 +80,7 @@
                         <button type="submit" name="action" value="promote" class="btn btn-primary">Promote</button>
                     </form>
                 {% endif %}
-                {% if current_role in ['leader', 'admin'] and pu.role != 'leader' %}
+                {% if (current_role in ['leader', 'admin'] and pu.role != 'leader') or (pu.user_id == current_user.id and current_role != 'leader') %}
                     <form method="POST" style="display:inline;">
                         <input type="hidden" name="user_id" value="{{ pu.user_id }}">
                         <button type="submit" name="action" value="remove" class="btn btn-danger">Remove</button>
