@@ -9,6 +9,7 @@ from datetime import datetime
 from datetime import timedelta
 from werkzeug.utils import secure_filename
 from flask import send_from_directory
+from collections import defaultdict
 
 
 app = Flask(__name__)
@@ -790,10 +791,6 @@ def on_leave(data):
     
     # 사용자 목록을 해당 post_id 룸에 전송
     emit('user_list', list(active_users.get(post_id, {}).keys()), room=post_id)
-@app.route('/group/<int:post_id>/alert')
-def group_alert(post_id):
-    # 알림 페이지에 필요한 데이터가 있다면 여기에 추가
-    return render_template('group_alert.html', post_id=post_id)
 @app.route('/search_group')
 def search_group():
     if 'user_id' not in session:
@@ -1010,4 +1007,3 @@ if __name__ == '__main__':
     
     socketio.run(app, debug=True)
    
-
