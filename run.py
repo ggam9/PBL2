@@ -198,6 +198,33 @@ def inject_user_status():
 
 
 # 라우트 정의
+@app.route('/update_study_time', methods=['GET', 'POST'])
+def update_study_time():
+    if 'user_id' not in session:
+        flash('Please log in to update your study time.', 'warning')
+        return redirect(url_for('login'))
+    
+    user = db.session.get(User, session['user_id'])
+
+    if request.method == 'POST':
+        # 폼에서 입력받은 시간을 초로 변환하여 저장
+        total_hours = int(request.form.get('total_hours', 0))
+        total_minutes = int(request.form.get('total_minutes', 0))
+        today_hours = int(request.form.get('today_hours', 0))
+        today_minutes = int(request.form.get('today_minutes', 0))
+        weekly_hours = int(request.form.get('weekly_hours', 0))
+        weekly_minutes = int(request.form.get('weekly_minutes', 0))
+
+        user.total_study_time = total_hours * 3600 + total_minutes * 60
+        user.today_study_time = today_hours * 3600 + today_minutes * 60
+        user.weekly_study_time = weekly_hours * 3600 + weekly_minutes * 60
+
+        db.session.commit()
+        flash('Study times updated successfully!', 'success')
+        return redirect(url_for('my_page'))
+
+    return render_template('update_study_time.html', user=user)
+    
 @app.route('/')
 def root():
     if 'user_id' in session:
