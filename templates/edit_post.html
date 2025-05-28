@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Edit Post{% endblock %}
+{% block title %}그룹 편집{% endblock %}
 
 {% block content %}
 <style>
@@ -82,14 +82,14 @@
 
 <div class="container">
     <div class="form-container">
-        <h2>Edit Post</h2>
+        <h2>그룹 편집집</h2>
         <form method="POST">
             <div class="form-group">
-                <label for="title">Title</label>
+                <label for="title">그룹명</label>
                 <input type="text" class="form-control" id="title" name="title" value="{{ post.title }}" required>
             </div>
             <div class="form-group">
-                <label for="topic">Topic</label>
+                <label for="topic">주제</label>
                 <select id="topic" name="topic" class="form-control" required>
                         {% for topic in topic_list %}
                     <option value="{{ topic }}">{{ topic }}</option>
@@ -97,14 +97,14 @@
                 </select>
             </div>
             <div class="form-group">
-                <label for="content">Content</label>
+                <label for="content">소개글</label>
                 <textarea class="form-control" id="content" name="content" rows="5" required>{{ post.content }}</textarea>
             </div>
             <div class="form-group">
-                <label for="max_participants">Max Participants</label><br>
+                <label for="max_participants">최대인원</label><br>
                 <input type="number" id="max_participants" name="max_participants" value="{{ post.max_participants }}" class="form-control" min="1" required>
             </div>
-            <button type="submit" class="btn btn-primary">Update Post</button>
+            <button type="submit" class="btn btn-primary">수정완료</button>
         </form>
     </div>
 </div>
