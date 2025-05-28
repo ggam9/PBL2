@@ -1,217 +1,218 @@
 {% extends "base.html" %}
 
-{% block title %}그룹 검색{% endblock %}
+{% block title %}마이페이지{% endblock %}
 
 {% block content %}
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>🔍그룹 검색</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: Arial, sans-serif;
-    }
-
+<style>
     body {
-      height: 100vh;
-      flex-direction: column;
-      background-color: #fff;
-    }
-
-    .topbar {
-      background: #fff;
-      padding: 0 200px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-      height: 60px;
-      border-bottom: 1px solid #ccc;
-    }
-
-    .topbar a {
-      font-size: 22px;
-      font-weight: bold;
-      color: #000;
-      text-decoration: none;
+        font-family: Arial, sans-serif;
+        margin: 0;
+        background-color: #fff;
     }
 
     .container {
-  width: 100%; /* 전체 너비 사용 */
-  max-width: 1200px; /* 최대 너비 설정 */
-  margin: 0 auto; /* 중앙 정렬 */
-  padding: 20px; /* 적절한 패딩 설정 */
-  background-color: #fff;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
-}
-
-    .search-box {
-      display: flex;
-      align-items: center;
-      margin-bottom: 20px;
+        max-width: 1000px;
+        margin: 40px auto;
+        padding: 0 20px;
+        display: flex;
+        gap: 20px;
     }
 
-    .search-box input {
-      padding: 12px;
-      margin-right: 10px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      width: 100%;
-      max-width: 300px;
-      background: #fff;
+    .left-panel {
+        flex: 2;
+    }
+    .separator {
+        width: 1px;
+        background-color: #ccc;
+        margin: 0 10px;
+    }
+    .right-panel {
+        flex: 1;
+        background-color: white;
+        border-radius: 20px;
+        box-shadow: 3px 3px 12px rgba(0, 0, 0, 0.08);
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
     }
 
-    .search-box select {
-      padding: 12px;
-      margin-right: 10px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      background: #fff;
+    .panel-header {
+        text-align: center;
+        margin-bottom: 20px;
     }
 
-    .search-box button {
-      padding: 12px;
-      background: #32c882;
-      border: none;
-      border-radius: 5px;
-      color: white;
-      cursor: pointer;
+    .panel-header h3 {
+        font-size: 24px;
+        font-weight: bold;
+        color: #333;
     }
 
-    .search-box button:hover {
-      background-color: #28a874;
-      transition: 0.2s;
+    .card-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
     }
 
-    .table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
+    .card-box {
+        background-color: white;
+        border-radius: 20px;
+        box-shadow: 3px 3px 12px rgba(0, 0, 0, 0.08);
+        transition: transform 0.2s, box-shadow 0.2s;
+        cursor: pointer;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
     }
 
-    .table th, .table td {
-      border: 1px solid #ddd;
-      padding: 8px;
-      text-align: left;
+    .card-box:hover {
+        transform: translateY(-5px);
+        box-shadow: 5px 5px 18px rgba(0, 0, 0, 0.12);
     }
 
-    .table th {
-      background-color: #f2f2f2;
+    .card-content {
+        padding: 20px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
     }
 
-    .btn {
-      padding: 8px 12px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      margin: 0 5px;
+    .card-title {
+        font-size: 20px;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 10px;
     }
 
-    .btn-primary {
-      background-color: #32c882;
-      color: white;
+    .card-desc {
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 8px;
     }
 
-    .btn-secondary {
-      background-color: #f2f2f2;
-      color: black;
+    .card-btn {
+        align-self: flex-start;
+        padding: 10px 20px;
+        background-color: #32c882;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: bold;
+        text-decoration: none;
+        transition: background-color 0.2s;
     }
 
-    .btn-danger {
-      background-color: #f44336;
-      color: white;
+    .card-btn:hover {
+        background-color: #206f4a;
     }
 
-    .btn-success {
-      background-color: #32c882;
-      color: white;
+    .stats {
+        flex: 1;
     }
-    .btn-success:hover{
-      background-color: #28a874;
-      transition: 0.2s;
+
+    .stats h4 {
+        font-size: 18px;
+        margin-bottom: 10px;
+        color: #333;
     }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>🔍그룹 검색</h1>
-    <!-- 검색 박스 및 필터 추가 -->
-    <div class="search-box">
-      <input type="text" id="search-keyword" placeholder="그룹명 검색">
-      <select id="topic-filter">
-        <option value="">주제</option>
-        <option value="프로그래밍">프로그래밍</option>
-        <option value="언어">언어</option>
-        <option value="자격증">자격증</option>
-      </select>
-      <button onclick="filterGroups()">검색</button>
+
+    .stats p {
+        font-size: 14px;
+        margin-bottom: 16px;
+        color: #666;
+    }
+
+    .set-btn {
+        padding: 12px;
+        background-color: #32c882;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: bold;
+        text-align: center;
+        text-decoration: none;
+        transition: background-color 0.2s;
+    }
+
+    .set-btn:hover {
+        background-color: #206f4a;
+    }
+    .study-info {
+        flex: 2;
+        min-width: 200px;
+    }
+    .progress-title {
+        font-size: 14px;
+        font-weight: bold;
+        margin-bottom: 4px;
+        color: #333;
+    }
+
+    .progress-bar {
+        width: 100%;
+        background-color: #e0e0e0;
+        border-radius: 10px;
+        overflow: hidden;
+        margin-bottom: 16px;
+        height: 14px;
+    }
+
+    .progress-fill {
+        height: 100%;
+        text-align: right;
+        padding-right: 8px;
+        line-height: 14px;
+        font-size: 11px;
+        font-weight: bold;
+        color: white;
+    }
+
+    .bar-total { background-color: #4f46e5; }
+    .bar-today { background-color: #32c882; }
+    .bar-goal { background-color: #f59e0b; }
+</style>
+
+<div class="container">
+    <div class="left-panel">
+        <div class="panel-header">
+            <h3>나의 스터디</h3>
+        </div>
+        <div class="card-grid">
+            {% for pu in joined_posts %}
+            <div class="card-box" onclick="location.href='{{ url_for('group_page', post_id=pu.post.id) }}'">
+                <div class="card-content">
+                    <div>
+                        <div class="card-title">{{ pu.post.title }}</div>
+                        <div class="card-desc">인원 수: {{ pu.post.member_count }}명</div>
+                        <div class="card-desc">주제: {{ pu.post.subject }}</div>
+                    </div>
+                    <a href="{{ url_for('group_page', post_id=pu.post.id) }}" class="card-btn">바로 가기</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
     </div>
+    <div class="separator"></div>
+    <div class="right-panel">
+        <div class="panel-header">
+            <h3>공부 시간</h3>
+                <div class="study-info">
+                    <div class="progress-title">총 공부 시간({{ total_study_time // 3600 }}시간 / {{ total_goal_hours }}시간)</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill bar-total" style="width: {{ total_progress }}%;">{{ total_progress|int }}%</div>
+                    </div>
 
-    <div class="mt-4">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>그룹명</th>
-            <th>주제</th>
-            <th>인원수</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="group-list">
-          {% for post in posts %}
-          <tr>
-            <td>
-              <span>{{ post.title }}</span>
-              <button class="btn btn-link" onclick="toggleDetails({{ post.id }})">자세히</button>
-              <div id="details-{{ post.id }}" class="details" style="display: none;">
-                <p>소개글: {{ post.content }}</p>
-              </div>
-            </td>
-            <td>{{ post.topic }}</td>
-            <td>{{ post.participants|length }} / {{ post.max_participants }}</td>
-            <td>
-              <form action="{{ url_for('join_post', post_id=post.id) }}" method="post" style="display:inline;">
-                <button type="submit" class="btn btn-success">가입</button>
-              </form>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+                    <div class="progress-title">오늘 공부 시간 ({{ today_study_time // 3600 }}시간 / {{ today_goal_hours }}시간)</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill bar-today" style="width: {{ today_progress }}%;">{{ today_progress|int }}%</div>
+                    </div>
+
+                    <div class="progress-title">목표 공부 시간 (이번 주: {{ weekly_study_time // 3600 }}시간 / {{ weekly_goal_hours }}시간)</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill bar-goal" style="width: {{ weekly_progress }}%;">{{ weekly_progress|int }}%</div>
+                    </div>
+                </div>
     </div>
-  </div>
-
-  <script>
-    function filterGroups() {
-      var keyword = document.getElementById('search-keyword').value.toLowerCase();
-      var topic = document.getElementById('topic-filter').value.toLowerCase();
-      var rows = document.querySelectorAll('#group-list tr');
-      rows.forEach(function(row) {
-        var title = row.querySelector('td:nth-child(2) span').innerText.toLowerCase();
-        var rowTopic = row.querySelector('td:nth-child(3)').innerText.toLowerCase();
-        if ((title.includes(keyword) || keyword === '') && (rowTopic.includes(topic) || topic === '')) {
-          row.style.display = '';
-        } else {
-          row.style.display = 'none';
-        }
-      });
-    }
-
-    function toggleDetails(postId) {
-      var detailsDiv = document.getElementById('details-' + postId);
-      if (detailsDiv.style.display === 'none') {
-        detailsDiv.style.display = 'block';
-      } else {
-        detailsDiv.style.display = 'none';
-      }
-    }
-  </script>
-</body>
-</html>
+</div>
 {% endblock %}
