@@ -4,8 +4,8 @@
  <h2>📋 해야 할 일이 있습니다!</h2>
  <ul style="list-style: none; font-size: 1.2em; padding-left: 0;">
    {% if quiz_count > 0 %}
-    <h3>📝 퀴즈 풀기</h3>
-    <ul class="quiz-list">
+     <h4>📝 퀴즈 풀기</h4>
+     <ul class="quiz-list">
       {% for quiz in quizzes %}
        <li class="quiz-item">
         <strong>문제:</strong> {{ quiz.question }}<br>        
@@ -16,7 +16,7 @@
          </a>
        </li>
       {% endfor %}
-    </ul>
+     </ul>
    {% endif %}
 
    {% if file_count > 0 %}
