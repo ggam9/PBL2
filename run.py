@@ -1090,7 +1090,7 @@ def handle_chat_message(data):
 @app.route('/group/<int:post_id>/group_alert')
 def group_alert(post_id):
     post = Post.query.get_or_404(post_id)  # post 객체 불러오기
-
+    quizzes = Quiz.query.filter_by(post_id=post_id).all()  # 퀴즈 목록 추가
     quiz_count = Quiz.query.filter_by(post_id=post_id).count()
 
     group_folder = os.path.join(app.config['UPLOAD_FOLDER'], str(post_id))
@@ -1108,6 +1108,7 @@ def group_alert(post_id):
                            post=post,
                            post_id=post_id,
                            quiz_count=quiz_count,
+                           quizzes=quizzes,
                            file_count=file_count,
                            schedule_count=schedule_count)
 # 애플리케이션 실행
