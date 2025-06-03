@@ -42,6 +42,9 @@ const postId  = document.body.dataset.postid;
   localVideo.muted   = true;
   localContainer.append(localVideo);
 
+  // 스트림을 얻은 후 버튼 텍스트 초기화
+  btnMute.textContent = localStream.getAudioTracks()[0].enabled ? '음소거' : '음소거 해제';
+
   //const userId = Math.random().toString(36).substr(2, 9); username을 user_id로 사용
   socket.emit('join', { user_id: username  });
   socket.emit('join_room', { room: `room-${postid}`, user_id: username });
@@ -86,9 +89,17 @@ const postId  = document.body.dataset.postid;
    document.getElementById('video-container-' + sid)?.remove();
   });
 
-  // 버튼 이벤트 핸들러 구현
+  // 버튼 음소거 이벤트 핸들러 구현
   btnMute.addEventListener('click', () => {
-    localStream.getAudioTracks().forEach(track => track.enabled = !track.enabled);
+   const audioTracks = localStream.getAudioTracks();
+   if (audioTracks.length === 0) return;
+
+   // 현재 상태 반전
+   audioTracks.forEach(track => track.enabled = !track.enabled);
+
+   // UI 텍스트 갱신
+   const isMutedNow = !audioTracks[0].enabled;
+   btnMute.textContent = isMutedNow ? '음소거 해제' : '음소거';
   });
 
   btnCam.addEventListener('click', () => {
