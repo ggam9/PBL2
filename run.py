@@ -828,7 +828,7 @@ def videochat(post_id):
         flash('Please log in to view your my_page', 'warning')
         return redirect(url_for('login'))
 
-    user = db.session.get(User, session['user_id'])  # 최신 SQLAlchemy 방식 사용
+    user = db.session.get(User, session['user_id'])  
     if not user:
         flash('User not found.', 'danger')
         return redirect(url_for('login'))
@@ -837,7 +837,7 @@ def videochat(post_id):
         'videochat.html',
         post_id=post_id,
         username=user.username,
-        user_id=user.id  # 유저식별아이디
+        user_id=user.id  # 
     )
     
 #공부시간 측정
