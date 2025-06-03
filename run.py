@@ -822,13 +822,22 @@ def studymode(post_id):
     
     return render_template('studymode.html', username=user.username, post_id=post_id, joined_posts=joined_posts)
 
-@app.route('/group/<int:post_id>/videochat')
+@app.route('/group/<int:post_id>/videochat') #화상채팅 서버-------------------------
 def videochat(post_id):
     if 'user_id' not in session:
         flash('Please log in to view your my_page', 'warning')
         return redirect(url_for('login'))
-    username = request.args.get('username') or session.get('username') or 'Guest'
-    return render_template('videochat.html',post_id=post_id,username=username)
+    user = User.query.get(session['user_id'])
+    if not user:
+        flash('User not found.', 'danger')
+        return redirect(url_for('login'))
+
+    return render_template(
+        'videochat.html',
+        post_id=post_id,
+        username=user.username,
+        user_id=user.id  # 유저식별용아이디----------------
+    )
 
 #공부시간 측정
 socketio.on('connect')
