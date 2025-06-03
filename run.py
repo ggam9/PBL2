@@ -843,7 +843,8 @@ def videochat(post_id):
 socketio.on('connect')
 def handle_connect():
     # 클라이언트가 연결될 때마다 현재 활성 사용자 목록을 전송
-    emit('user_list', list(active_users.get(2, {}).keys()))
+    emit('user_list', list(active_users.get(2, {}).keys()))-------------
+  
 
 
 @socketio.on('join-time')
