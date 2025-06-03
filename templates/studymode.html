@@ -159,6 +159,9 @@
           socket.emit('leave-time', { username: username, postId: postId });
           socket.disconnect();  // 연결 명확히 종료
       };
+     socket.on('force_reload', function() {
+       location.reload();
+      });
   </script>
 </body>
 </html>
