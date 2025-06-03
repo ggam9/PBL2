@@ -887,7 +887,9 @@ def on_leave(data):
         # 해당 post_id에 다른 사용자가 없으면 post_id 제거
         if not active_users[post_id]:
             del active_users[post_id]
-    
+
+    # 🔁 새로고침 이벤트 전송
+    emit('force_reload', {}, room=post_id)
     # 사용자 목록을 해당 post_id 룸에 전송
     emit('user_list', list(active_users.get(post_id, {}).keys()), room=post_id)
 @app.route('/search_group')
