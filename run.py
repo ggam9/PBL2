@@ -32,8 +32,11 @@ def allowed_file(filename, subdirectory):
     ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
     return subdirectory in ALLOWED_EXTENSIONS_BY_TYPE and ext in ALLOWED_EXTENSIONS_BY_TYPE[subdirectory]
 
-def upload_file(file, directory_path, subdirectory):
-    if file and allowed_file(file.filename, subdirectory):
+def upload_file(file, directory_path, subdirectory=None):
+    if file:
+        if subdirectory:
+            if not allowed_file(file.filename, subdirectory):
+                return None
         filename = secure_filename(file.filename)
         file_path = os.path.join(directory_path, filename)
         file.save(file_path)
