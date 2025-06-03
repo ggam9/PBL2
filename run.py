@@ -836,7 +836,7 @@ def videochat(post_id):
         'videochat.html',
         post_id=post_id,
         username=user.username,
-        user_id=user.id  # 유저식별용아이디----------------
+        user_id=user.id  
     )
 
 #공부시간 측정
@@ -986,92 +986,101 @@ def update_password():
     return render_template('update_password.html', form=form)
 
 #화상회의-----------------------------------------------------------------------------------------------------
-
+# 화상회의 서버 코드 (채팅 제외)
 app.config['SECRET_KEY'] = 'secret!'
-
 ROOM = 'mesh_room'
-users = {}  # sid -> user_id
+users = {}  # sid -> {'user_id': ..., 'username': ..., 'room': ...}
 
-@socketio.on('connect',namespace='/videochat')
+@socketio.on('connect', namespace='/videochat')
 def handle_connect(auth):
     sid = request.sid
     print('Client connected:', sid, 'auth:', auth)
 
-@socketio.on('join',namespace='/videochat')
+@socketio.on('join', namespace='/videochat')
 def handle_join(data):
-    user_id = data['user_id']
     sid = request.sid
-     # 중복 sid 제거 (user_id 중복 체크)
-    for s, uid in list(users.items()):
-        if uid == user_id:
+    user_id = data.get('user_id')
+    username = data.get('username')
+    
+    # 중복 제거
+    for s in list(users):
+        if users[s]['user_id'] == user_id:
             users.pop(s)
             leave_room(ROOM, sid=s)
             print(f'기존 연결 제거: {s} ({user_id})')
-            
-    users[sid] = user_id
+    
+    # 사용자 등록
+    users[sid] = {
+        'user_id': user_id,
+        'username': username,
+        'room': ROOM
+    }
     join_room(ROOM)
-    # 기존 참가자에게 신규 참가 알림
-    emit('new-user', {'user_id': user_id, 'sid': sid}, room=ROOM, include_self=False)
-    # 신규 참가자에게 기존 참가자 목록 전달
-    peers = [{'user_id': uid, 'sid': s} for s, uid in users.items() if s != sid]
+    
+    # 신규 유저 알림 (다른 참가자에게)
+    emit('new-user', {
+        'user_id': user_id,
+        'sid': sid,
+        'username': username
+    }, room=ROOM, include_self=False)
+
+    # 기존 유저 정보 전달 (신규 참가자에게)
+    peers = [
+        {
+            'sid': s,
+            'user_id': info['user_id'],
+            'username': info['username']
+        }
+        for s, info in users.items() if s != sid
+    ]
     emit('all-users', {'peers': peers})
 
-@socketio.on('offer',namespace='/videochat')
+@socketio.on('offer', namespace='/videochat')
 def handle_offer(data):
     target = data['target_sid']
-    sid    = request.sid
-    # SDP offer와 발신자(sender) 정보를 같이 보냅니다
+    sid = request.sid
     emit('offer', {
-        'sdp':    data['sdp'],
+        'sdp': data['sdp'],
         'sender': sid
     }, room=target)
 
-@socketio.on('answer',namespace='/videochat')
+@socketio.on('answer', namespace='/videochat')
 def handle_answer(data):
     target = data['target_sid']
-    sid    = request.sid
-    # SDP answer와 발신자(sender) 정보를 같이 보냅니다
+    sid = request.sid
     emit('answer', {
-        'sdp':    data['sdp'],
+        'sdp': data['sdp'],
         'sender': sid
     }, room=target)
 
-@socketio.on('ice-candidate',namespace='/videochat')
+@socketio.on('ice-candidate', namespace='/videochat')
 def handle_ice(data):
     target = data['target_sid']
-    sid    = request.sid
-    # ICE 후보와 발신자(sender) 정보를 같이 보냅니다
+    sid = request.sid
     emit('ice-candidate', {
         'candidate': data['candidate'],
-        'sender':    sid
+        'sender': sid
     }, room=target)
 
-@socketio.on('disconnect',namespace='/videochat')
+@socketio.on('disconnect', namespace='/videochat')
 def handle_disconnect(sid=None):
-    # sid가 넘어오지 않으면 request.sid 사용
     sid = sid or request.sid
-
-    # users dict에서 제거
-    user_id = users.pop(sid, None)
-
-    # 룸에서 나가기 (sid 명시)
-    leave_room(ROOM, sid=sid)
-
-    # 모두에게 알림
-    emit('user-disconnected', {'user_id': user_id, 'sid': sid}, room=ROOM)
-    print('Client disconnected', sid)
-
+    user = users.pop(sid, None)
+    if user:
+        leave_room(user['room'], sid=sid)
+        emit('user-disconnected', {
+            'user_id': user['user_id'],
+            'sid': sid
+        }, room=user['room'])
+        print(f'Client disconnected: {sid} ({user["user_id"]})')
 
 @socketio.on('force_reload', namespace='/videochat')
 def handle_force_reload(data):
-  room = data.get('room')
-  sender_sid = request.sid
-  user_id = data.get('user_id')
-
-  print(f'User {user_id} ({sender_sid}) triggered reload for room {room}')
-
-  # 같은 방의 다른 사용자들에게만 알림 (본인은 제외)
-  emit('reload_others', {'user_id': user_id}, room=room, include_self=False)
+    room = data.get('room')
+    user_id = data.get('user_id')
+    sender_sid = request.sid
+    print(f'User {user_id} ({sender_sid}) triggered reload for room {room}')
+    emit('reload_others', {'user_id': user_id}, room=room, include_self=False)
   
 #-----------화상비디오 채팅-----------
 @socketio.on('join_room',namespace='/videochat')
