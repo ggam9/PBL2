@@ -23,8 +23,9 @@ const btnChat  = document.getElementById('btnChat');
 
 
 const username = document.body.dataset.username;
-const postid  =  document.body.dataset.postid;
 const postId  = document.body.dataset.postid;
+//const postid  =  document.body.dataset.postid;
+
 
 (async () => {
   try {
@@ -47,7 +48,7 @@ const postId  = document.body.dataset.postid;
 
   //const userId = Math.random().toString(36).substr(2, 9); username을 user_id로 사용
   socket.emit('join', { user_id: username  });
-  socket.emit('join_room', { room: `room-${postid}`, user_id: username });
+  socket.emit('join_room', { room: `room-${postId}`, user_id: username });
   socket.on('reload_others', ({ user_id }) => {
     console.log(`User ${user_id} has ended the call. Reloading...`);
     // 연결 해제 후 리로드
@@ -152,7 +153,7 @@ const postId  = document.body.dataset.postid;
    if (e.key === 'Enter' && chatInput.value.trim()) {
     const msg = chatInput.value.trim();
     socket.emit('chat_message', {
-      room: `room-${postid}`,  // 방 이름 동적 설정
+      room: `room-${postId}`,  // 방 이름 동적 설정
       msg: msg,
       user_id: username,
       username: username
