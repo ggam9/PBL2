@@ -42,7 +42,7 @@ const postId   = document.body.dataset.postid;
   btnMute.textContent = localStream.getAudioTracks()[0].enabled ? '음소거' : '음소거 해제';
 
   // ✅ 실제 유저 ID와 함께 join
-  socket.emit('join', { user_id: userId });
+  socket.emit('join', { user_id: userId,username:username });
   socket.emit('join_room', { room: `room-${postId}`, user_id: userId });
 
   socket.on('reload_others', ({ user_id }) => {
@@ -52,13 +52,13 @@ const postId   = document.body.dataset.postid;
   });
 
   socket.on('all-users', ({ peers: list }) => {
-    list.forEach(p => createPeer(p.sid, p.user_id, true));
+    list.forEach(p => createPeer(p.sid, p.user_id,p.username, true));
   });
 
-  socket.on('new-user', ({ sid, user_id }) => createPeer(sid, user_id, false));
+  socket.on('new-user', ({ sid, user_id, username }) => createPeer(sid, user_id, username, false));
 
-  socket.on('offer', async ({ sdp, sender }) => {
-    const pc = peers[sender] || createPeer(sender, null, false);
+  socket.on('offer', async ({ sdp, sender, username }) => {
+   const pc = peers[sender] || createPeer(sender, null, username, false);
     await pc.setRemoteDescription(new RTCSessionDescription(sdp));
     const answer = await pc.createAnswer();
     await pc.setLocalDescription(answer);
@@ -142,7 +142,7 @@ const postId   = document.body.dataset.postid;
 })();
 
 // Peer 연결 생성
-function createPeer(sid, user_id, isInitiator) {
+function createPeer(sid, user_id,username, isInitiator) {
   if (peers[sid]) return peers[sid];
   const pc = new RTCPeerConnection(config);
   peers[sid] = pc;
@@ -177,7 +177,8 @@ function createPeer(sid, user_id, isInitiator) {
       container.appendChild(video);
 
       const label = document.createElement('div');
-      label.textContent = username || '이름 없음';
+      label.textContent = username ? username : '이름 없음';
+      label.classList.add('peer-username-label');
       label.style.fontSize = '14px';
       label.style.marginTop = '4px';
       container.appendChild(label);
