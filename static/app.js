@@ -175,6 +175,33 @@ function createPeer(sid, user_id,username, isInitiator) {
       video.autoplay = true;
       video.style.width = '200px';
       container.appendChild(video);
+      
+      // ✅ 클릭 시 확대/축소
+     video.addEventListener('click', () => {
+      if (video.classList.contains('zoomed')) {
+        video.classList.remove('zoomed');
+        video.style.width = '200px';
+        video.style.zIndex = '';
+        video.style.position = '';
+        video.style.top = '';
+        video.style.left = '';
+        video.style.transform = '';
+        video.style.boxShadow = '';
+       } else {
+        video.classList.add('zoomed');
+        video.style.width = '80vw';
+        video.style.position = 'fixed';
+        video.style.top = '50%';
+        video.style.left = '50%';
+        video.style.transform = 'translate(-50%, -50%)';
+        video.style.zIndex = '1000';
+        video.style.boxShadow = '0 0 20px rgba(0, 0, 0, 0.5)';
+      }
+     });
+
+
+
+
 
       const label = document.createElement('div');
       label.textContent = username ? username : '이름 없음';
@@ -185,6 +212,12 @@ function createPeer(sid, user_id,username, isInitiator) {
 
       remoteContainer.appendChild(container);
     }
+
+
+
+
+
+
     const video = document.getElementById('video-' + sid);
     video.srcObject = e.streams[0];
   };
