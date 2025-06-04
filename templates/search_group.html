@@ -141,9 +141,9 @@
       <input type="text" id="search-keyword" placeholder="그룹명 검색">
       <select id="topic-filter">
         <option value="">주제</option>
-        <option value="프로그래밍">프로그래밍</option>
-        <option value="언어">언어</option>
-        <option value="자격증">자격증</option>
+          {% for topic in topic_list %}
+        <option value="{{ topic }}">{{ topic }}</option>
+          {% endfor %}
       </select>
       <button onclick="filterGroups()">검색</button>
     </div>
@@ -165,9 +165,9 @@
               <span>{{ post.title }}</span>
               <button class="btn btn-link" onclick="toggleDetails({{ post.id }})">자세히</button>
               <div id="details-{{ post.id }}" class="details" style="display: none;">
-                <p>Content: {{ post.content }}</p>
-                <p>Created At: {{ post.created_at }}</p>
-                <p>Updated At: {{ post.updated_at }}</p>
+                <p>소개글: {{ post.content }}</p>
+                <p>생성일자: {{ post.created_at }}</p>
+                <p>수정일자: {{ post.updated_at }}</p>
               </div>
             </td>
             <td>{{ post.topic }}</td>
@@ -205,6 +205,14 @@
         row.style.display = 'none';
       }
     });
+  }
+  function toggleDetails(postId) {
+    var detailsDiv = document.getElementById('details-' + postId);
+    if (detailsDiv.style.display === 'none') {
+      detailsDiv.style.display = 'block';
+    } else {
+      detailsDiv.style.display = 'none';
+    }
   }
 </script>
 </body>
