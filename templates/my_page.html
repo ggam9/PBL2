@@ -213,6 +213,13 @@
                         <div class="progress-fill bar-goal" style="width: {{ weekly_progress }}%;">{{ weekly_progress|int }}%</div>
                     </div>
                 </div>
+            <div>
+                <button onclick="location.href='/update_study_time'" class="card-btn">목표 시간 수정</button>
+            </div>
+    </div>
+    <div class="panel-header">
+        <button onclick="location.href='/update_profile'" class="card-btn">내정보 수정</button>
+        <button onclick="location.href='/update_password'" class="card-btn">암호 수정</button>
     </div>
 </div>
 {% endblock %}
