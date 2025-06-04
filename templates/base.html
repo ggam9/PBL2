@@ -39,7 +39,6 @@
     }
     .topbar-left button:hover {
       background-color: #ebffe5;
-      transition: 0.2s;
     }
     .top-buttons {
       display: flex;
@@ -63,10 +62,6 @@
       padding: 8px 12px;
       border-radius: 5px;
     }
-    .top-buttons button:hover{
-      background: #28a874;
-      transition: 0.2s;
-    }
   </style>
 </head>
 <body>
@@ -84,15 +79,12 @@
         <div class="username">
           👤 {{ session['username'] }}님
         </div>
-        <button onclick="location.href='/update_profile'">내정보 수정</button>
-        <button onclick="location.href='/update_password'">암호 수정</button>
-
         <!-- 상태 변경 드롭다운 -->
         <select class="status-dropdown" id="status-dropdown" onchange="updateStatus(this.value)">
-          <option value="offline" {% if session['user_status'] == 'offline' %}selected{% endif %}>오프라인</option>
-          <option value="online" {% if session['user_status'] == 'online' %}selected{% endif %}>온라인</option>
-          <option value="self-studying" {% if session['user_status'] == 'self-studying' %}selected{% endif %}>자습 중</option>
-          <option value="studying" {% if session['user_status'].startswith('studying') %}selected{% endif %}>공부 중</option>
+          <option value="offline" {% if user_status == 'offline' %}selected{% endif %}>오프라인</option>
+          <option value="online" {% if user_status == 'online' %}selected{% endif %}>온라인</option>
+          <option value="self-studying" {% if user_status == 'self-studying' %}selected{% endif %}>자습 중</option>
+          <option value="studying" {% if user_status.startswith('studying') %}selected{% endif %}>공부 중</option>
         </select>
 
       {% else %}
