@@ -862,7 +862,7 @@ def on_join(data):
         # 사용자 추가
         if username not in active_users[post_id]:
             active_users[post_id][username] = datetime.now()  # 시작 시간을 저장
-            user.status = '공부중'
+            user.status = 'studying'
             user.last_status_change = datetime.now()
             db.session.commit()
         
