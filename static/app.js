@@ -3,7 +3,7 @@ import { io } from 'https://cdn.socket.io/4.7.2/socket.io.esm.min.js';
 const socket = io('http://localhost:5000/videochat', {
   reconnection: false
 });
-const config = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+const config = { iceServers: [{ urls: 'stun:stun.l.google.com:19302', { urls: 'turn:YOUR_TURN_SERVER_IP:3478', username: 'USERNAME', credential: 'PASSWORD'} }] };
 
 let localStream;
 const peers = {};
